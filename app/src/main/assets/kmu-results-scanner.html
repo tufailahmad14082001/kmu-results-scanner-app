@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="color-scheme" content="light dark" />
-<meta name="theme-color" content="#0c5c46" />
+<meta name="theme-color" content="#045a70" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -13,45 +13,49 @@
 <title>KMU Results Scanner</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
   :root{
-    --bg:#e8efe7;
-    --bg-dots:#d3e0d2;
+    --bg:#e7edf3;
+    --grid:rgba(9,44,66,.07);
     --surface:#ffffff;
-    --surface2:#eef4ed;
-    --ink:#132018;
-    --ink2:#4c5b50;
-    --line:#ccd9cc;
-    --teal:#0c5c46;
-    --teal-bright:#0f7a5c;
-    --teal-soft:#ddefe4;
-    --amber:#9c6a00;
-    --amber-soft:#fbeecb;
-    --red:#a33327;
+    --surface2:#edf3f8;
+    --ink:#0a1826;
+    --ink2:#476074;
+    --line:#bfd0dd;
+    --cy:#04708a;
+    --cy-bright:#0a93b3;
+    --cy-deep:#045a70;
+    --cy-soft:#dcf1f7;
+    --org:#d6541a;
+    --org-soft:#fdeadd;
+    --red:#b3261e;
     --red-soft:#fbe7e3;
-    --beam:rgba(15,122,92,.16);
-    --shadow:0 10px 30px rgba(16,50,36,.10);
+    --ok:#0d7a4e;
+    --ok-soft:#dcf3e6;
+    --shadow:0 12px 28px rgba(7,35,54,.12);
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark){
     :root{
-      --bg:#08110c;
-      --bg-dots:#12241a;
-      --surface:#131f17;
-      --surface2:#1b2a20;
-      --ink:#ecf4ed;
-      --ink2:#a2b3a6;
-      --line:#2b3d30;
-      --teal:#54cf9f;
-      --teal-bright:#7ce3ba;
-      --teal-soft:#173528;
-      --amber:#eeb84e;
-      --amber-soft:#3a2e0e;
-      --red:#f59a86;
-      --red-soft:#3c1d16;
-      --beam:rgba(84,207,159,.14);
-      --shadow:0 10px 30px rgba(0,0,0,.45);
+      --bg:#04090f;
+      --grid:rgba(90,200,235,.07);
+      --surface:#0a141f;
+      --surface2:#0e1d2b;
+      --ink:#e8f3f8;
+      --ink2:#93a9b8;
+      --line:#1e3448;
+      --cy:#3fd2f2;
+      --cy-bright:#7ce6ff;
+      --cy-deep:#0a93b3;
+      --cy-soft:#0c2a38;
+      --org:#ff9046;
+      --org-soft:#38220e;
+      --red:#ff9a8a;
+      --red-soft:#3a1a13;
+      --ok:#5ad69a;
+      --ok-soft:#0f2f22;
+      --shadow:0 12px 28px rgba(0,0,0,.5);
       color-scheme: dark;
     }
   }
@@ -59,121 +63,159 @@
   html{-webkit-text-size-adjust:100%;}
   body{
     margin:0; color:var(--ink);
-    font-family:"Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-family:"Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     font-size:16px; line-height:1.55;
     background:
-      radial-gradient(var(--bg-dots) 1.2px, transparent 1.3px) 0 0/22px 22px,
+      linear-gradient(var(--grid) 1px, transparent 1px) 0 0/100% 26px,
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0/26px 100%,
       var(--bg);
-    animation:bgDrift 26s linear infinite;
   }
-  @keyframes bgDrift{ from{background-position:0 0, 0 0;} to{background-position:220px 220px, 0 0;} }
-  .wrap{max-width:880px; margin:0 auto; padding:22px 16px 64px;}
+  .wrap{max-width:900px; margin:0 auto; padding:22px 16px 64px;}
 
-  /* ---------- hero ---------- */
+  /* ---------- hero : x-ray console ---------- */
   .hero{
     position:relative; overflow:hidden;
-    display:flex; align-items:center; gap:18px;
-    background:linear-gradient(120deg, var(--teal) 0%, var(--teal-bright) 78%);
-    color:#fff; border-radius:22px; padding:24px 22px;
+    display:flex; align-items:center; gap:20px;
+    background:linear-gradient(125deg, #06222e 0%, #045a70 62%, #0a93b3 130%);
+    color:#eaf7fb; border-radius:10px; padding:26px 22px;
     box-shadow:var(--shadow);
-    animation:heroIn .7s cubic-bezier(.2,.8,.3,1) both;
+    animation:heroIn .6s cubic-bezier(.2,.8,.3,1) both;
   }
-  @media (prefers-color-scheme: dark){ .hero{color:#07130d;} }
   .hero::before{
     content:""; position:absolute; inset:0; pointer-events:none;
-    background:repeating-linear-gradient(0deg, rgba(255,255,255,.05) 0 2px, transparent 2px 7px);
-    animation:scanShift 9s linear infinite;
+    background:
+      linear-gradient(rgba(140,225,250,.09) 1px, transparent 1px) 0 0/100% 22px,
+      linear-gradient(90deg, rgba(140,225,250,.09) 1px, transparent 1px) 0 0/22px 100%;
   }
-  @keyframes scanShift{ from{transform:translateY(0);} to{transform:translateY(28px);} }
   .hero::after{
-    content:""; position:absolute; top:-10%; bottom:-10%; width:70px; left:-90px; pointer-events:none;
-    background:linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
-    transform:skewX(-14deg);
-    animation:beamSweep 4.6s ease-in-out infinite;
+    content:""; position:absolute; left:0; right:0; height:54px; top:-60px; pointer-events:none;
+    background:linear-gradient(180deg, transparent, rgba(124,230,255,.20), transparent);
+    animation:heroScan 5.2s ease-in-out infinite;
   }
-  @keyframes beamSweep{ 0%,55%{left:-90px;} 90%,100%{left:110%;} }
-  @keyframes heroIn{ from{opacity:0; transform:translateY(14px) scale(.985);} to{opacity:1; transform:none;} }
-  .hero-mark{
-    flex:0 0 auto; width:64px; height:64px; border-radius:16px;
-    background:rgba(255,255,255,.16);
-    display:flex; align-items:center; justify-content:center;
-    position:relative; z-index:1;
+  @keyframes heroScan{ 0%{top:-60px;} 55%,100%{top:110%;} }
+  @keyframes heroIn{ from{opacity:0; transform:translateY(12px);} to{opacity:1; transform:none;} }
+  .radar{
+    flex:0 0 auto; width:88px; height:88px; border-radius:50%; position:relative; z-index:1;
+    border:2px solid rgba(124,230,255,.55);
+    background:
+      radial-gradient(circle, transparent 30%, rgba(124,230,255,.16) 31%, transparent 32%),
+      radial-gradient(circle, transparent 62%, rgba(124,230,255,.16) 63%, transparent 64%),
+      radial-gradient(circle at 50% 50%, rgba(4,40,56,.9), rgba(4,26,38,.95));
+    overflow:hidden;
   }
-  .hero-mark svg{width:40px; height:40px; display:block;}
-  .hero-mark .scanbar{ animation:scanBar 2.6s ease-in-out infinite; }
-  @keyframes scanBar{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(15px);} }
+  .radar::before, .radar::after{
+    content:""; position:absolute; background:rgba(124,230,255,.35);
+  }
+  .radar::before{left:50%; top:0; bottom:0; width:1px;}
+  .radar::after{top:50%; left:0; right:0; height:1px;}
+  .radar .sweep{
+    position:absolute; inset:0; border-radius:50%;
+    background:conic-gradient(from 0deg, rgba(124,230,255,.75), rgba(124,230,255,.12) 70deg, transparent 80deg);
+    animation:sweepSpin 3.6s linear infinite;
+  }
+  @keyframes sweepSpin{ to{transform:rotate(360deg);} }
+  .radar .blip{
+    position:absolute; width:7px; height:7px; border-radius:50%; background:#ffd166;
+    box-shadow:0 0 8px #ffd166;
+    animation:blipPulse 3.6s ease-in-out infinite;
+  }
+  .radar .blip.b1{left:24px; top:20px;}
+  .radar .blip.b2{left:58px; top:52px; animation-delay:1.2s; background:#7ce6ff; box-shadow:0 0 8px #7ce6ff;}
+  .radar .blip.b3{left:30px; top:60px; animation-delay:2.3s;}
+  @keyframes blipPulse{ 0%,55%,100%{opacity:.15;} 12%{opacity:1;} }
+  .hero-text{position:relative; z-index:1; min-width:0;}
   .hero h1{
-    font-family:"Bricolage Grotesque","Public Sans",sans-serif;
-    font-size:clamp(28px,6.4vw,42px); line-height:1.05; margin:0; font-weight:800; letter-spacing:-.01em;
-    position:relative; z-index:1;
+    font-family:"Chakra Petch","Archivo",sans-serif;
+    font-size:clamp(27px,6vw,40px); line-height:1.04; margin:0; font-weight:700; letter-spacing:.01em;
+    text-transform:uppercase;
   }
+  .hero h1 .thin{color:#7ce6ff;}
   .hero .uni{
-    margin:4px 0 0; font-size:14.5px; font-weight:600; opacity:.85; letter-spacing:.04em;
-    position:relative; z-index:1;
+    margin:6px 0 0; font-size:13px; font-weight:600; letter-spacing:.28em; opacity:.85;
+    font-family:"IBM Plex Mono",monospace;
   }
-  h2{font-size:20px; margin:0 0 8px; font-weight:700;}
+  .hero-eq{
+    margin-left:auto; display:none; align-items:flex-end; gap:4px; height:44px; position:relative; z-index:1;
+  }
+  @media(min-width:560px){ .hero-eq{display:flex;} }
+  .hero-eq span{
+    width:6px; background:#7ce6ff; border-radius:2px 2px 0 0; opacity:.85;
+    animation:eqBounce 1.15s ease-in-out infinite; animation-delay:calc(var(--i)*90ms);
+  }
+  @keyframes eqBounce{ 0%,100%{height:22%;} 50%{height:100%;} }
+  body.scanning .hero-eq span{animation-duration:.45s;}
+  h2{font-family:"Chakra Petch","Archivo",sans-serif; font-size:20px; margin:0 0 8px; font-weight:700;}
   h3{font-size:15px; margin:0 0 6px; font-weight:700;}
   p{margin:0 0 10px;}
 
-  /* ---------- picker ---------- */
+  /* ---------- picker : drop bay ---------- */
   .picker{
     position:relative; overflow:hidden;
-    background:var(--surface); border:1.5px dashed var(--teal);
-    border-radius:20px; padding:26px 18px 20px; text-align:center; margin:20px 0 12px;
+    background:var(--surface); border:1.5px solid var(--cy);
+    border-radius:10px; padding:30px 18px 22px; text-align:center; margin:20px 0 12px;
     box-shadow:var(--shadow);
-    animation:heroIn .7s .08s cubic-bezier(.2,.8,.3,1) both;
+    animation:heroIn .6s .07s cubic-bezier(.2,.8,.3,1) both;
   }
-  .picker::after{
-    content:""; position:absolute; left:0; right:0; top:-40px; height:38px; pointer-events:none;
-    background:linear-gradient(180deg, transparent, var(--beam), transparent);
-    animation:pickerScan 3.8s ease-in-out infinite;
+  .picker .corner{
+    position:absolute; width:22px; height:22px; pointer-events:none;
+    border:0 solid var(--cy-bright);
   }
-  @keyframes pickerScan{ 0%{top:-42px;} 55%,100%{top:105%;} }
-  body.scanning .picker::after{animation-duration:1.1s;}
+  .picker .corner.tl{top:8px; left:8px; border-top-width:3px; border-left-width:3px;}
+  .picker .corner.tr{top:8px; right:8px; border-top-width:3px; border-right-width:3px;}
+  .picker .corner.bl{bottom:8px; left:8px; border-bottom-width:3px; border-left-width:3px;}
+  .picker .corner.br{bottom:8px; right:8px; border-bottom-width:3px; border-right-width:3px;}
+  .picker .laser{
+    position:absolute; left:6%; right:6%; height:3px; top:-6px; pointer-events:none;
+    background:linear-gradient(90deg, transparent, var(--cy-bright), transparent);
+    box-shadow:0 0 14px var(--cy-bright);
+    animation:laserRun 4.2s ease-in-out infinite;
+  }
+  @keyframes laserRun{ 0%{top:-6px; opacity:0;} 12%{opacity:1;} 55%{top:102%; opacity:1;} 70%,100%{top:102%; opacity:0;} }
+  body.scanning .picker .laser{animation-duration:1s;}
   .picker-icon{position:relative; width:76px; height:76px; margin:2px auto 6px;}
   .picker-icon .ring{
-    position:absolute; inset:0; border-radius:50%; border:2px solid var(--teal);
+    position:absolute; inset:0; border-radius:50%; border:2px solid var(--cy);
     opacity:0; animation:ringPulse 2.8s ease-out infinite;
   }
   .picker-icon .ring.r2{animation-delay:1.4s;}
   @keyframes ringPulse{ 0%{transform:scale(.55); opacity:.75;} 70%{opacity:0;} 100%{transform:scale(1.25); opacity:0;} }
-  body.scanning .picker-icon .ring{animation-duration:1.2s;}
+  body.scanning .picker-icon .ring{animation-duration:1.1s;}
   .picker-icon .core{
     position:absolute; inset:14px; border-radius:50%;
-    background:var(--teal-soft); display:flex; align-items:center; justify-content:center;
+    background:var(--cy-soft); display:flex; align-items:center; justify-content:center;
     animation:coreBob 3.2s ease-in-out infinite;
   }
   @keyframes coreBob{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-4px);} }
-  body.scanning .picker-icon .core{animation:coreSpinPulse 1s ease-in-out infinite;}
-  @keyframes coreSpinPulse{ 0%,100%{transform:scale(1);} 50%{transform:scale(1.1);} }
+  body.scanning .picker-icon .core{animation:corePulse 1s ease-in-out infinite;}
+  @keyframes corePulse{ 0%,100%{transform:scale(1);} 50%{transform:scale(1.12);} }
   .picker-icon svg{width:28px; height:28px;}
   .file-controls{display:grid; gap:12px; margin:12px auto 4px; max-width:560px; text-align:left; position:relative; z-index:1;}
   @media(min-width:640px){ .file-controls{grid-template-columns:1fr 1fr;} }
-  .file-control{display:block; background:var(--bg); border:1px solid var(--line); border-radius:14px; padding:12px; transition:transform .15s ease, border-color .15s ease;}
-  .file-control:hover{transform:translateY(-1px); border-color:var(--teal);}
+  .file-control{display:block; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:12px; transition:transform .15s ease, border-color .15s ease;}
+  .file-control:hover{transform:translateY(-1px); border-color:var(--cy);}
   .file-control .fc-title{display:block; font-weight:700; margin-bottom:8px; font-size:15px;}
   .file-control input[type="file"]{font:inherit; font-size:14px; width:100%; color:var(--ink2);}
   .file-control input[type="file"]::file-selector-button{
-    font:inherit; font-weight:700; cursor:pointer; border-radius:10px;
+    font:inherit; font-weight:700; cursor:pointer; border-radius:7px;
     padding:12px 16px; margin-right:10px; min-height:48px;
     background:var(--surface); color:var(--ink); border:1px solid var(--line);
   }
-  .file-control.primary{background:var(--teal-soft); border-color:var(--teal);}
+  .file-control.primary{background:var(--cy-soft); border-color:var(--cy);}
   .file-control.primary input[type="file"]::file-selector-button{
-    background:var(--teal); color:#fff; border-color:transparent;
+    background:var(--cy); color:#fff; border-color:transparent;
   }
-  @media (prefers-color-scheme: dark){ .file-control.primary input[type="file"]::file-selector-button{color:#07130d;} }
+  @media (prefers-color-scheme: dark){ .file-control.primary input[type="file"]::file-selector-button{color:#04202c;} }
 
   /* ---------- buttons ---------- */
   button, .btn{
-    font:inherit; font-weight:700; cursor:pointer; border-radius:12px;
+    font:inherit; font-weight:700; cursor:pointer; border-radius:8px;
     padding:14px 20px; border:1px solid transparent; min-height:52px;
     transition:transform .12s ease, filter .12s ease;
   }
   button:active{transform:scale(.97);}
   .btnrow{display:flex; flex-wrap:wrap; gap:10px; justify-content:flex-start; margin:10px 0 4px;}
-  .btn-primary{background:var(--teal); color:#fff; font-size:16px; position:relative; overflow:hidden;}
-  @media (prefers-color-scheme: dark){ .btn-primary{color:#07130d;} }
+  .btn-primary{background:var(--cy); color:#fff; font-size:16px; position:relative; overflow:hidden;}
+  @media (prefers-color-scheme: dark){ .btn-primary{color:#04202c;} }
   .btn-primary::after{
     content:""; position:absolute; top:0; bottom:0; width:36px; left:-50px;
     background:linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent);
@@ -181,127 +223,189 @@
   }
   .btn-primary:hover::after{left:115%;}
   .btn-ghost{background:var(--surface); color:var(--ink); border-color:var(--line);}
-  .btn-ghost:hover{border-color:var(--teal);}
+  .btn-ghost:hover{border-color:var(--cy);}
   .btn-small{padding:10px 14px; min-height:44px; font-size:14.5px;}
   button:disabled{opacity:.5; cursor:default;}
-  button:focus-visible, textarea:focus-visible{outline:3px solid var(--amber); outline-offset:2px;}
+  button:focus-visible, textarea:focus-visible, input:focus-visible{outline:3px solid var(--org); outline-offset:2px;}
+
+  /* ---------- upload indicator ---------- */
+  .uploadbox{
+    display:none; align-items:center; gap:14px;
+    background:var(--surface); border:1.5px solid var(--cy); border-radius:10px;
+    padding:14px 16px; margin:18px 0 0; box-shadow:var(--shadow);
+  }
+  .uploadbox.on{display:flex; animation:heroIn .35s ease both;}
+  .up-anim{position:relative; flex:0 0 auto; width:44px; height:44px; color:var(--cy);}
+  .up-anim svg{width:34px; height:34px; position:absolute; left:5px; top:2px; animation:upBounce 1s ease-in-out infinite;}
+  @keyframes upBounce{ 0%,100%{transform:translateY(3px); opacity:.55;} 50%{transform:translateY(-3px); opacity:1;} }
+  .uploadbox.done .up-anim svg{animation:none; color:var(--ok);}
+  .up-dot{
+    position:absolute; bottom:0; width:6px; height:6px; border-radius:50%; background:var(--cy-bright);
+    animation:dotRise 1.2s ease-in-out infinite;
+  }
+  .up-dot.d1{left:6px;} .up-dot.d2{left:19px; animation-delay:.2s;} .up-dot.d3{left:32px; animation-delay:.4s;}
+  @keyframes dotRise{ 0%,100%{transform:translateY(0); opacity:.3;} 50%{transform:translateY(-5px); opacity:1;} }
+  .uploadbox.done .up-dot{animation:none; opacity:.35;}
+  .up-text{font-size:15px; font-weight:600;}
+  .up-text b{color:var(--cy); font-family:"IBM Plex Mono",monospace;}
 
   /* ---------- progress ---------- */
   .progress-wrap{margin:18px 0; display:none;}
-  .progress-wrap.on{display:block; animation:heroIn .4s ease both;}
-  .bar{height:14px; background:var(--surface2); border-radius:99px; overflow:hidden; border:1px solid var(--line);}
+  .progress-wrap.on{display:block; animation:heroIn .35s ease both;}
+  .bar{height:16px; background:var(--surface2); border-radius:6px; overflow:hidden; border:1px solid var(--line);}
   .bar > div{
-    height:100%; width:0%; border-radius:99px;
-    background:repeating-linear-gradient(45deg, var(--teal) 0 14px, var(--teal-bright) 14px 28px);
-    background-size:40px 100%;
-    animation:stripes 0.8s linear infinite;
+    height:100%; width:0%;
+    background:repeating-linear-gradient(115deg, var(--cy) 0 16px, var(--cy-bright) 16px 32px);
+    background-size:45px 100%;
+    animation:chev 0.7s linear infinite;
     transition:width .25s ease;
   }
-  @keyframes stripes{ from{background-position:0 0;} to{background-position:40px 0;} }
+  @keyframes chev{ from{background-position:0 0;} to{background-position:45px 0;} }
   .progress-text{font-size:14px; color:var(--ink2); margin-top:7px; font-weight:600; word-break:break-word;}
-  .progress-text .pct{font-family:"IBM Plex Mono",monospace; color:var(--teal); font-weight:600;}
+  .progress-text .pct{font-family:"IBM Plex Mono",monospace; color:var(--cy); font-weight:600; font-size:16px;}
 
-  /* ---------- summary ---------- */
+  /* ---------- summary readouts ---------- */
   .summary{display:none; margin:24px 0 6px;}
   .summary.on{display:block;}
   .statgrid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:4px 0 14px;}
-  @media(min-width:640px){ .statgrid{grid-template-columns:repeat(3,1fr);} }
+  @media(min-width:640px){ .statgrid{grid-template-columns:repeat(4,1fr);} }
   .stat{
-    background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:12px 14px;
-    box-shadow:var(--shadow);
+    background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:12px 14px;
+    box-shadow:var(--shadow); position:relative; overflow:hidden;
     animation:pop .5s cubic-bezier(.2,.8,.3,1.4) both; animation-delay:var(--d,0ms);
   }
+  .stat::before{
+    content:""; position:absolute; top:10px; right:10px; width:7px; height:7px; border-radius:50%;
+    background:var(--cy-bright); animation:blinkDot 2.2s ease-in-out infinite;
+  }
+  @keyframes blinkDot{ 0%,100%{opacity:1;} 50%{opacity:.25;} }
   @keyframes pop{ from{opacity:0; transform:scale(.92) translateY(8px);} to{opacity:1; transform:none;} }
-  .stat .big{font-family:"Bricolage Grotesque",sans-serif; font-size:30px; font-weight:800; line-height:1.1; color:var(--teal);}
-  .stat .lbl{font-size:13px; color:var(--ink2); font-weight:600;}
+  .stat .big{font-family:"IBM Plex Mono",monospace; font-size:29px; font-weight:600; line-height:1.1; color:var(--cy);}
+  .stat .lbl{font-size:12.5px; color:var(--ink2); font-weight:600;}
   .chips{display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 12px;}
   .chip{
-    background:var(--teal-soft); color:var(--ink); border-radius:99px; padding:5px 12px;
-    font-size:13.5px; font-weight:600;
+    background:var(--cy-soft); color:var(--ink); border-radius:6px; padding:5px 12px;
+    font-size:13.5px; font-weight:600; font-family:"IBM Plex Mono",monospace;
     animation:pop .4s ease both; animation-delay:var(--d,0ms);
   }
-  .chip.warn{background:var(--amber-soft);}
-  .chip-lbl{font-size:12.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--ink2); margin-top:10px;}
+  .chip.warn{background:var(--org-soft);}
+  .chip-lbl{font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--ink2); margin-top:10px; font-family:"Chakra Petch",sans-serif;}
+  .toolbar{margin:16px 0 4px;}
+  .toolbar input[type="search"]{
+    width:100%; font:inherit; font-size:16px; padding:14px 16px;
+    border:1.5px solid var(--cy); border-radius:8px;
+    background:var(--surface); color:var(--ink); box-shadow:var(--shadow);
+  }
+  .toolbar input[type="search"]::placeholder{color:var(--ink2);}
 
   /* ---------- results ---------- */
   .group{margin:26px 0 0;}
   .group-head{
     position:sticky; top:8px; z-index:2;
-    background:linear-gradient(120deg, var(--teal), var(--teal-bright)); color:#fff;
-    border-radius:12px; box-shadow:var(--shadow);
-    padding:10px 14px; font-weight:800; font-size:17px;
+    background:linear-gradient(120deg, #06222e, #045a70); color:#eaf7fb;
+    border-radius:8px; box-shadow:var(--shadow);
+    padding:10px 14px; font-weight:700; font-size:18px;
+    font-family:"Chakra Petch",sans-serif; letter-spacing:.04em;
     display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
     animation:rise .5s ease both;
   }
-  @media (prefers-color-scheme: dark){ .group-head{color:#07130d;} }
-  .group-head .count{font-weight:600; font-size:14px; opacity:.9;}
+  .group-head .count{font-weight:600; font-size:14px; opacity:.9; font-family:"IBM Plex Mono",monospace;}
   .region-head{
-    margin:16px 0 8px; font-weight:700; font-size:15px; color:var(--teal);
-    border-bottom:2px solid var(--teal-soft); padding-bottom:4px;
+    margin:16px 0 8px; font-weight:700; font-size:15px; color:var(--cy);
+    border-bottom:2px solid var(--cy-soft); padding-bottom:4px;
     display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
     animation:rise .5s ease both;
   }
   .item{
-    background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    position:relative; overflow:hidden;
+    background:var(--surface); border:1px solid var(--line); border-radius:8px;
     padding:12px 14px; margin:0 0 8px; box-shadow:var(--shadow);
     animation:rise .55s cubic-bezier(.2,.8,.3,1) both; animation-delay:var(--d,0ms);
   }
+  .item::after{
+    content:attr(data-sem); position:absolute; right:6px; top:-14px;
+    font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:64px;
+    color:var(--cy); opacity:.07; pointer-events:none; line-height:1;
+  }
   @keyframes rise{ from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
-  .item .fname{font-weight:700; word-break:break-word; font-size:15px;}
-  .item .meta{display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:6px; font-size:14px; color:var(--ink2);}
+  .item .fname{font-weight:700; word-break:break-word; font-size:15px; position:relative; z-index:1;}
+  .item .meta{display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:6px; font-size:14px; color:var(--ink2); position:relative; z-index:1;}
   .item .meta b{color:var(--ink); font-weight:600;}
   .item .loc{
     margin-top:8px; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12.5px;
-    color:var(--ink2); background:var(--surface2); border-radius:8px; padding:6px 9px;
-    word-break:break-all;
+    color:var(--ink2); background:var(--surface2); border-radius:6px; padding:6px 9px;
+    word-break:break-all; position:relative; z-index:1;
   }
-  .item .loc b{color:var(--teal); font-weight:600;}
-  .tag{display:inline-block; font-size:12px; font-weight:700; border-radius:6px; padding:2px 8px; vertical-align:middle;}
-  .tag-ok{background:var(--teal-soft);}
-  .tag-check{background:var(--amber-soft); color:var(--amber);}
+  .item .loc b{color:var(--cy); font-weight:600;}
+  .tag{display:inline-block; font-size:12px; font-weight:700; border-radius:5px; padding:2px 8px; vertical-align:middle;}
+  .tag-ok{background:var(--cy-soft);}
+  .tag-ocr{background:var(--cy); color:#fff;}
+  @media (prefers-color-scheme: dark){ .tag-ocr{color:#04202c;} }
+  .tag-known{background:var(--ok-soft); color:var(--ok); border:1px solid var(--ok);}
+  .tag-check{background:var(--org-soft); color:var(--org);}
   .tag-bad{background:var(--red-soft); color:var(--red);}
   .item.is-dupe{border:1.5px dashed var(--red); background:var(--red-soft);}
-  .tag-dupe{background:var(--red); color:#fff; animation:dupePulse 1.6s ease-in-out infinite;}
-  @keyframes dupePulse{ 0%,100%{opacity:1;} 50%{opacity:.55;} }
-  @media (prefers-color-scheme: dark){ .tag-dupe{color:#1a0d0a;} }
+  .tag-dupe{
+    background:transparent; color:var(--red); border:2px solid var(--red);
+    transform:rotate(-3deg); letter-spacing:.06em;
+    animation:stampIn .45s cubic-bezier(.2,.8,.3,1.6) both;
+  }
+  @keyframes stampIn{ from{opacity:0; transform:rotate(-3deg) scale(1.7);} to{opacity:1; transform:rotate(-3deg) scale(1);} }
   .item .meta2{
     display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:8px; padding-top:8px;
     border-top:1px solid var(--line); font-size:13.5px; color:var(--ink2);
+    position:relative; z-index:1;
   }
   .item .meta2 b{color:var(--ink); font-weight:600;}
-  .item .meta2 .miss{color:var(--amber); font-weight:700;}
+  .item .meta2 .miss{color:var(--org); font-weight:700;}
+  .item .guess{
+    margin-top:9px; background:var(--org-soft); border:1px dashed var(--org); border-radius:6px;
+    padding:8px 10px; font-size:13.5px; position:relative; z-index:1;
+  }
+  .item .guess b{color:var(--org);}
   .item .dupnote{margin-top:8px; font-size:14px; font-weight:600; color:var(--red); word-break:break-word;}
 
-  /* ---------- duplicates box ---------- */
+  /* ---------- duplicates + unknown boxes ---------- */
   .dupbox{
     display:none; background:var(--surface); border:1.5px solid var(--red);
-    border-radius:18px; padding:18px; margin:26px 0 0; box-shadow:var(--shadow);
+    border-radius:10px; padding:18px; margin:26px 0 0; box-shadow:var(--shadow);
   }
   .dupbox.on{display:block; animation:rise .5s ease both;}
   .dupbox h2{color:var(--red);}
   .dupbox ul{margin:8px 0 0; padding-left:20px;}
   .dupbox li{margin:0 0 8px; font-size:14.5px; word-break:break-word;}
   .dupbox .dloc{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink2);}
+  .unknownbox{
+    display:none; background:var(--surface); border:1.5px dashed var(--org);
+    border-radius:10px; padding:18px; margin:26px 0 0; box-shadow:var(--shadow);
+  }
+  .unknownbox.on{display:block; animation:rise .5s ease both;}
+  .unknownbox h2{color:var(--org);}
+  .unknownbox ul{margin:8px 0 0; padding-left:20px;}
+  .unknownbox li{margin:0 0 9px; font-size:14.5px; word-break:break-word;}
+  .unknownbox .ufile{font-weight:700;}
+  .unknownbox .uguess{color:var(--org); font-weight:600;}
+  .unknownbox .uloc{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink2);}
 
   /* ---------- send / downloads ---------- */
   .sendbox{
     display:none; background:var(--surface); border:1px solid var(--line);
-    border-radius:18px; padding:18px; margin:30px 0 0; box-shadow:var(--shadow);
+    border-radius:10px; padding:18px; margin:30px 0 0; box-shadow:var(--shadow);
   }
   .sendbox.on{display:block; animation:rise .5s ease both;}
   .sendbox textarea{
-    width:100%; min-height:170px; border:1px solid var(--line); border-radius:10px;
+    width:100%; min-height:170px; border:1px solid var(--line); border-radius:8px;
     background:var(--bg); color:var(--ink); padding:12px; font-size:13px;
     font-family:"IBM Plex Mono", ui-monospace, monospace; line-height:1.5;
   }
   .msg{font-size:14.5px; font-weight:600; margin-top:10px; min-height:22px;}
-  .msg.good{color:var(--teal);}
+  .msg.good{color:var(--ok);}
   .again{margin-top:14px; text-align:center;}
 
   /* ---------- report view ---------- */
   .report-view{
     display:none; background:var(--surface); border:1px solid var(--line);
-    border-radius:18px; padding:20px 18px; margin:30px 0 0;
+    border-radius:10px; padding:20px 18px; margin:30px 0 0;
   }
   .report-view.on{display:block; animation:rise .5s ease both;}
   .report-view h2{font-size:22px;}
@@ -311,7 +415,7 @@
   .report-view th{background:var(--surface2); font-weight:700;}
   .report-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch;}
   @media print{
-    body{background:#fff; animation:none;}
+    body{background:#fff;}
     .wrap > *:not(.report-view){display:none !important;}
     .report-view{display:block !important; border:none; padding:0; margin:0; animation:none;}
     .report-view .no-print{display:none !important;}
@@ -326,26 +430,26 @@
 <main class="wrap">
 
   <header class="hero">
-    <div class="hero-mark" aria-hidden="true">
-      <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
-        <rect x="11" y="5" width="26" height="38" rx="4" fill="rgba(255,255,255,.92)"/>
-        <line x1="17" y1="15" x2="31" y2="15" stroke="#0c5c46" stroke-width="3" stroke-linecap="round"/>
-        <line x1="17" y1="22" x2="31" y2="22" stroke="#0c5c46" stroke-width="3" stroke-linecap="round" opacity=".65"/>
-        <line x1="17" y1="29" x2="26" y2="29" stroke="#0c5c46" stroke-width="3" stroke-linecap="round" opacity=".4"/>
-        <g class="scanbar"><rect x="14" y="11" width="20" height="4" rx="2" fill="#e8a33d"/></g>
-      </svg>
+    <div class="radar" aria-hidden="true">
+      <span class="sweep"></span>
+      <span class="blip b1"></span><span class="blip b2"></span><span class="blip b3"></span>
     </div>
-    <div>
-      <h1>KMU Results Scanner</h1>
+    <div class="hero-text">
+      <h1>KMU Results <span class="thin">Scanner</span></h1>
       <p class="uni">KHYBER MEDICAL UNIVERSITY</p>
+    </div>
+    <div class="hero-eq" aria-hidden="true">
+      <span style="--i:0"></span><span style="--i:1"></span><span style="--i:2"></span><span style="--i:3"></span><span style="--i:4"></span><span style="--i:5"></span><span style="--i:6"></span>
     </div>
   </header>
 
   <section class="picker" id="dropZone" aria-label="Choose folder or files">
+    <span class="corner tl" aria-hidden="true"></span><span class="corner tr" aria-hidden="true"></span><span class="corner bl" aria-hidden="true"></span><span class="corner br" aria-hidden="true"></span>
+    <span class="laser" aria-hidden="true"></span>
     <div class="picker-icon" aria-hidden="true">
       <span class="ring"></span><span class="ring r2"></span>
       <span class="core">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2.5h7A2.5 2.5 0 0 1 21 10v7a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17V7.5Z" fill="#0c5c46" opacity=".9"/><path d="M3 10h18v7a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17v-7Z" fill="#0f7a5c"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2.5h7A2.5 2.5 0 0 1 21 10v7a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17V7.5Z" fill="#045a70" opacity=".9"/><path d="M3 10h18v7a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17v-7Z" fill="#0a93b3"/></svg>
       </span>
     </div>
     <div class="file-controls">
@@ -358,6 +462,14 @@
     </div>
   </section>
 
+  <div class="uploadbox" id="uploadBox" aria-live="polite">
+    <div class="up-anim" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 19V6M6.5 11 12 5.5 17.5 11" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 20.5h16" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+      <span class="up-dot d1"></span><span class="up-dot d2"></span><span class="up-dot d3"></span>
+    </div>
+    <div class="up-text" id="uploadText">Receiving your files…</div>
+  </div>
+
   <div class="progress-wrap" id="progressWrap" aria-live="polite">
     <div class="bar"><div id="barFill"></div></div>
     <div class="progress-text" id="progressText">Starting…</div>
@@ -367,10 +479,15 @@
     <div class="statgrid">
       <div class="stat" style="--d:0ms"><div class="big" id="statTotal" data-v="0">0</div><div class="lbl">PDFs listed</div></div>
       <div class="stat" style="--d:60ms"><div class="big" id="statRead" data-v="0">0</div><div class="lbl">Read from inside the PDF</div></div>
-      <div class="stat" style="--d:120ms"><div class="big" id="statNameOnly" data-v="0">0</div><div class="lbl">File name only</div></div>
-      <div class="stat" style="--d:180ms"><div class="big" id="statCheck" data-v="0">0</div><div class="lbl">Need a check (CHECK)</div></div>
-      <div class="stat" style="--d:240ms"><div class="big" id="statDupe" data-v="0">0</div><div class="lbl">Possible duplicates</div></div>
-      <div class="stat" style="--d:300ms"><div class="big" id="statOther" data-v="0">0</div><div class="lbl">Other files (not PDFs)</div></div>
+      <div class="stat" style="--d:120ms"><div class="big" id="statOcr" data-v="0">0</div><div class="lbl">Photo PDFs read by OCR</div></div>
+      <div class="stat" style="--d:180ms"><div class="big" id="statKnown" data-v="0">0</div><div class="lbl">Matched your known list</div></div>
+      <div class="stat" style="--d:240ms"><div class="big" id="statNameOnly" data-v="0">0</div><div class="lbl">File name only</div></div>
+      <div class="stat" style="--d:300ms"><div class="big" id="statCheck" data-v="0">0</div><div class="lbl">Need a check (CHECK)</div></div>
+      <div class="stat" style="--d:360ms"><div class="big" id="statDupe" data-v="0">0</div><div class="lbl">Possible duplicates</div></div>
+      <div class="stat" style="--d:420ms"><div class="big" id="statOther" data-v="0">0</div><div class="lbl">Other files (not PDFs)</div></div>
+    </div>
+    <div class="toolbar">
+      <input type="search" id="searchInput" placeholder="Search the results — college name, region, semester, file name…" aria-label="Search the scanned results" />
     </div>
     <div class="chip-lbl">Year</div>
     <div class="chips" id="chipsYear"></div>
@@ -383,6 +500,11 @@
   <section class="dupbox" id="dupBox" aria-live="polite">
     <h2>Possible duplicates</h2>
     <ul id="dupList"></ul>
+  </section>
+
+  <section class="unknownbox" id="unknownBox" aria-live="polite">
+    <h2>Unknown results — best guesses</h2>
+    <ul id="unknownList"></ul>
   </section>
 
   <div id="results"></div>
@@ -415,6 +537,8 @@
 
 </main>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.5/dist/tesseract.min.js"></script>
 <script>
 (function(){
   "use strict";
@@ -744,6 +868,41 @@
   }
 
   var REGIONS = ["Hazara","Kohat","Malakand","Mardan","Peshawar"];
+
+  // ---------- The known results list (the 181 results already arranged) ----------
+  // Used two ways: (1) a scanned file that matches one of these is tagged
+  // "In your known list"; (2) unknown files get a best guess from the pattern
+  // of these. Only facts already confirmed are written here — nothing invented.
+  var KNOWN = [];
+  (function(){
+    function add(region, sem, session, type, year){ KNOWN.push({region:region, sem:sem, session:session, type:type, year:year}); }
+    add("Peshawar", 5, "Fall 2025", "Regular", 2025);
+    add("Peshawar", 2, "Spring 2025", null, 2025);
+    add("Hazara", 3, "Spring 2026", "Regular", 2026);
+    var s;
+    for (s = 1; s <= 8; s++) add("Malakand", s, null, "Makeup", 2026);       // Malakand Makeup 2026, 1st–8th
+    [2,4,6].forEach(function(n){ add("Malakand", n, "Summer 2026", "Summer", 2026); });
+    for (s = 1; s <= 7; s++) add("Mardan", s, "Summer 2026", "Summer", 2026); // Mardan Summer 2026, 1st–7th
+  })();
+  function normRegionName(r){
+    if (!r) return "";
+    return r.replace(/\s*\(.*?\)\s*/g, "").trim().toLowerCase();
+  }
+  function matchKnown(it){
+    if (!it.semester || !it.region || it.region.indexOf("CHECK") >= 0) return false;
+    var reg = normRegionName(it.region);
+    for (var i = 0; i < KNOWN.length; i++) {
+      var k = KNOWN[i];
+      if (normRegionName(k.region) !== reg) continue;
+      if (k.sem !== it.semester) continue;
+      if (k.session && it.session !== k.session) continue;
+      if (k.type && it.examType !== k.type) continue;
+      if (k.year && it.year && it.year !== k.year) continue;
+      if (k.year && !it.year && k.session && it.session === "—") continue;
+      return true;
+    }
+    return false;
+  }
   var items = [];        // scanned PDF records
   var otherCount = 0;    // non-PDF files seen
   var seenKeys = {};     // de-dupe across folder scans: name|size
@@ -758,6 +917,13 @@
   var sendBox = document.getElementById("sendBox");
   var listText = document.getElementById("listText");
   var copyMsg = document.getElementById("copyMsg");
+  var uploadBox = document.getElementById("uploadBox");
+  var uploadText = document.getElementById("uploadText");
+  var filterText = "";
+  document.getElementById("searchInput").addEventListener("input", function(e){
+    filterText = (e.target.value || "").trim().toLowerCase();
+    render();
+  });
 
   document.getElementById("moreBtn").addEventListener("click", function(){
     document.getElementById("dropZone").scrollIntoView({behavior:"smooth", block:"center"});
@@ -765,6 +931,8 @@
   });
   document.getElementById("clearBtn").addEventListener("click", function(){
     items = []; otherCount = 0; seenKeys = {};
+    filterText = ""; document.getElementById("searchInput").value = "";
+    uploadBox.classList.remove("on", "done");
     render(); copyMsg.textContent = "";
     window.scrollTo({top:0, behavior:"smooth"});
   });
@@ -839,15 +1007,19 @@
       if (/swat/i.test(near)) return {region:"Malakand (Swat)", how:"signature"};
     }
     // 2) Whole text
+    if (/\ball\s*regions?\b/i.test(text)) return {region:"All Regions", how:"content"};
     for (var j=0;j<REGIONS.length;j++){
       if (low.indexOf(REGIONS[j].toLowerCase()) >= 0) return {region:REGIONS[j], how:"content"};
     }
     if (/\bswat\b/i.test(text)) return {region:"Malakand (Swat)", how:"content"};
+    if (/\bmkd\b/i.test(text)) return {region:"Malakand", how:"content"};
     return null;
   }
   function findSession(text){
     var m = text.match(/\b(Spring|Fall|Autumn|Summer|Winter)\s*[- ]?\s*(20\d{2})\b/i);
     if (m) return {name: m[1].charAt(0).toUpperCase()+m[1].slice(1).toLowerCase(), year: parseInt(m[2],10)};
+    m = text.match(/\b(Spring|Fall|Autumn|Summer|Winter)\s*[- ]?\s*(\d{2})\b(?!\d)/i);
+    if (m) { var yy = parseInt(m[2],10); if (yy >= 20 && yy <= 35) return {name: m[1].charAt(0).toUpperCase()+m[1].slice(1).toLowerCase(), year: 2000 + yy}; }
     m = text.match(/\b(20\d{2})\s*[- ]\s*(20\d{2})\b/);
     if (m) return {name:"Session", year: parseInt(m[2],10)};
     return null;
@@ -945,6 +1117,82 @@
     return { label:"B"+(start%100)+"-"+(endShort<10?"0":"")+endShort, startYear:start, how:"Calculated — CHECK" };
   }
 
+  // College / institute names written inside a result — only names that ARE
+  // in the PDF are listed. Nothing about missing colleges.
+  function findColleges(text){
+    if (!text) return [];
+    var t = " " + text.replace(/\s+/g, " ") + " ";
+    var out = [], seen = {};
+    var re = /([A-Z][A-Za-z&'’.\-]*(?: [A-Z][A-Za-z&'’.\-]*){0,4} (?:College|Institute|School|Academy)(?: of (?:Nursing Sciences|Nursing\s*&\s*Health Sciences|Health Sciences|Medical Sciences|Nursing))?)/g, m;
+    while ((m = re.exec(t)) !== null) {
+      var name = m[1].replace(/\s+/g, " ").trim();
+      if (name.length < 8 || name.length > 72) continue;
+      if (/university|director|examination|controller|board of/i.test(name)) continue;
+      var key = name.toLowerCase();
+      if (seen[key]) continue;
+      seen[key] = true;
+      out.push(name);
+      if (out.length >= 15) break;
+    }
+    return out;
+  }
+  // Best guess for a result whose identity is partly unknown. Every guess is
+  // labelled a guess, with the reason written next to it in plain words.
+  function computeGuess(rec){
+    var g = { session: null, type: null, year: null, why: [] };
+    // Session guess from the semester: odd semesters normally end in the Fall
+    // session, even semesters in the Spring session.
+    if ((!rec.sessionYear) && rec.year && rec.semester) {
+      g.session = (rec.semester % 2 === 1 ? "Fall " : "Spring ") + rec.year;
+      g.why.push("semester " + semLabel(rec.semester) + " normally sits in the " + (rec.semester % 2 === 1 ? "Fall" : "Spring") + " session");
+    }
+    // Exam-type guess from the known list: same region + semester seen before.
+    if (!rec.typeExplicit && rec.semester && rec.region && rec.region.indexOf("CHECK") < 0) {
+      var types = {};
+      KNOWN.forEach(function(k){
+        if (normRegionName(k.region) === normRegionName(rec.region) && k.sem === rec.semester && k.type) types[k.type] = true;
+      });
+      var keys = Object.keys(types);
+      if (keys.length === 1 && keys[0] !== rec.examType) {
+        g.type = keys[0];
+        g.why.push("your known list has this region + semester as " + keys[0]);
+      }
+    }
+    // Year guess from a batch code in the file name: a batch that started in
+    // December reaches semester N about ceil(N/2) years later.
+    if (!rec.year && rec.semester) {
+      var bc = findBatchCode(rec.fileName);
+      if (bc) {
+        g.year = bc.startYear + Math.ceil(rec.semester / 2);
+        g.why.push("worked out from the batch " + bc.label + " in the file name + the semester");
+      }
+    }
+    if (!g.session && !g.type && !g.year) return null;
+    return g;
+  }
+  function guessText(g){
+    if (!g) return "";
+    var parts = [];
+    if (g.year) parts.push("Year " + g.year);
+    if (g.session) parts.push(g.session);
+    if (g.type) parts.push(g.type);
+    return parts.join(" · ") + (g.why.length ? " — because " + g.why.join("; ") : "");
+  }
+  // One plain sentence an ordinary person can read: what this result is.
+  function plainLine(it){
+    var bits = [];
+    bits.push(it.program ? it.program : "Nursing");
+    if (it.semester) bits.push(semLabel(it.semester) + " semester");
+    var s = "This is the " + bits.join(" ") + " result";
+    if (it.region && it.region.indexOf("CHECK") < 0) s += " of " + it.region + " region";
+    if (it.session && it.session !== "—") s += ", " + it.session;
+    if (it.examType && it.examType !== "Regular") s += " (" + it.examType + " exam)";
+    s += ".";
+    if (it.date && it.date !== "—") s += " The result came out on " + it.date + ".";
+    if (it.colleges && it.colleges.length) s += " Colleges in it: " + it.colleges.slice(0, 4).join(", ") + (it.colleges.length > 4 ? " and " + (it.colleges.length - 4) + " more." : ".");
+    return s;
+  }
+
   function parseFromText(text, fileName){
     var rec = { readOk:false };
     var sem = findSemester(text);
@@ -980,6 +1228,25 @@
     }).catch(function(){ return {text:"", pages:null}; });
   }
 
+  function finalizeRecord(rec){
+    rec.year = rec.dateYear || rec.sessionYear || null;
+    rec.examDates = rec.examStart ? (rec.examStart + (rec.examEnd ? " to " + rec.examEnd : "")) : null;
+    var b = findBatchCode(rec.fileName);
+    if (!b) b = calcBatch(rec.semester, rec.sessionYear || rec.dateYear);
+    rec.batch = b ? b.label : "—";
+    rec.batchHow = b ? b.how : "No code — CHECK";
+    rec.known = matchKnown(rec);
+    var missing = [];
+    if (!rec.year) missing.push("year");
+    if (!rec.region) missing.push("region");
+    if (!rec.semester) missing.push("semester");
+    if (!rec.program) missing.push("program");
+    rec.check = missing.length ? ("CHECK: " + missing.join(", ")) : "";
+    rec.guess = computeGuess(rec);
+    if (!rec.region) rec.region = "— CHECK";
+    return rec;
+  }
+
   function buildRecord(file, extracted){
     var name = file.name;
     var pdfText = (extracted && extracted.text) || "";
@@ -987,8 +1254,13 @@
     var fromContent = parseFromText(pdfText || "", name);
     var fromName = parseFromText(name.replace(/[_\-]+/g," "), name);
     fromName.regionHow = fromName.region ? "file name" : null;
-
     var path = folderPathOf(file);
+    var fromPath = parseFromText(path.replace(/[\/]/g, " "), name);
+    fromPath.regionHow = fromPath.region ? "folder name" : null;
+
+    var typeSrc = (fromContent.examType && fromContent.examType !== "Regular") ? fromContent
+                : (fromName.examType && fromName.examType !== "Regular") ? fromName
+                : (fromPath.examType && fromPath.examType !== "Regular") ? fromPath : null;
     var rec = {
       fileName: name,
       fileKey: name.toLowerCase() + "|" + file.size,
@@ -997,13 +1269,15 @@
       size: sizeText(file.size),
       pages: pages,
       readOk: !!(pdfText && pdfText.trim().length > 40),
-      semester: fromContent.semester || fromName.semester || null,
-      region: (fromContent.region || fromName.region || null),
-      regionHow: fromContent.region ? fromContent.regionHow : (fromName.region ? "file name" : null),
-      session: fromContent.session || fromName.session || "—",
-      sessionYear: fromContent.sessionYear || fromName.sessionYear || null,
-      examType: (fromContent.examType && fromContent.examType !== "Regular") ? fromContent.examType
-                : (fromName.examType || fromContent.examType || "Regular"),
+      ocrOk: false,
+      ocrTried: false,
+      semester: fromContent.semester || fromName.semester || fromPath.semester || null,
+      region: (fromContent.region || fromName.region || fromPath.region || null),
+      regionHow: fromContent.region ? fromContent.regionHow : (fromName.region ? "file name" : (fromPath.region ? "folder name" : null)),
+      session: fromContent.session || fromName.session || fromPath.session || "—",
+      sessionYear: fromContent.sessionYear || fromName.sessionYear || fromPath.sessionYear || null,
+      examType: typeSrc ? typeSrc.examType : "Regular",
+      typeExplicit: !!typeSrc,
       date: fromContent.date || fromName.date || "—",
       dateYear: fromContent.dateYear || fromName.dateYear || null,
       dateSort: fromContent.dateSort || fromName.dateSort || 0,
@@ -1014,25 +1288,12 @@
       passed: fromContent.passed || null,
       examStart: fromContent.examStart || null,
       examEnd: fromContent.examEnd || null,
+      colleges: findColleges(pdfText),
+      hasRD: /regional\s+director/i.test(pdfText || ""),
       dupe: "",
       dupeKind: ""
     };
-    rec.year = rec.dateYear || rec.sessionYear || null;
-    rec.examDates = rec.examStart ? (rec.examStart + (rec.examEnd ? " to " + rec.examEnd : "")) : null;
-
-    var b = findBatchCode(name);
-    if (!b) b = calcBatch(rec.semester, rec.sessionYear || rec.dateYear);
-    rec.batch = b ? b.label : "—";
-    rec.batchHow = b ? b.how : "No code — CHECK";
-
-    var missing = [];
-    if (!rec.year) missing.push("year");
-    if (!rec.region) missing.push("region");
-    if (!rec.semester) missing.push("semester");
-    if (!rec.program) missing.push("program");
-    rec.check = missing.length ? ("CHECK: " + missing.join(", ")) : "";
-    if (!rec.region) rec.region = "— CHECK";
-    return rec;
+    return finalizeRecord(rec);
   }
 
   function cloneAsFileDupe(orig, file){
@@ -1069,6 +1330,90 @@
   function dupItems(){ return items.filter(function(i){ return !!i.dupe; }); }
   function mainItems(sorted){ return sorted.filter(function(i){ return !i.dupe; }); }
 
+  // ---------- OCR for photo PDFs (full power, two engines together) ----------
+  // A photo PDF has no text inside, so: pdf.js draws the page as a picture,
+  // and Tesseract.js reads the writing in that picture (OCR). The first page
+  // is read; if the semester or region is still not found, the last page is
+  // read too (that is where the signature and date sit). Both libraries load
+  // from the internet once; if they cannot load, the file falls back to its
+  // file name and the report says so plainly.
+  var ocrWorkerP = null, ocrFailed = false;
+  function ocrAvailable(){ return !!(window.Tesseract && window.pdfjsLib) && !ocrFailed; }
+  function getOcrWorker(){
+    if (!window.Tesseract) return Promise.resolve(null);
+    if (!ocrWorkerP) {
+      ocrWorkerP = window.Tesseract.createWorker("eng")
+        .then(function(w){ return w; })
+        .catch(function(){ ocrFailed = true; return null; });
+    }
+    return ocrWorkerP;
+  }
+  function withTimeout(p, ms){
+    return Promise.race([p, new Promise(function(res){ setTimeout(function(){ res(null); }, ms); })]);
+  }
+  function ocrCanvasText(canvas){
+    if (!canvas) return Promise.resolve("");
+    return getOcrWorker().then(function(w){
+      if (!w) return "";
+      return withTimeout(w.recognize(canvas), 120000)
+        .then(function(r){ return (r && r.data && r.data.text) || ""; })
+        .catch(function(){ return ""; });
+    });
+  }
+  function mergeOcr(rec, text){
+    var p = parseFromText(text, rec.fileName);
+    var got = false;
+    if (!rec.semester && p.semester) { rec.semester = p.semester; got = true; }
+    if ((!rec.region || rec.region.indexOf("CHECK") >= 0) && p.region) { rec.region = p.region; rec.regionHow = "OCR — read from the photo"; got = true; }
+    if (rec.session === "—" && p.session) { rec.session = p.session; rec.sessionYear = p.sessionYear || null; got = true; }
+    if (!rec.typeExplicit && p.examType && p.examType !== "Regular") { rec.examType = p.examType; rec.typeExplicit = true; got = true; }
+    if (rec.date === "—" && p.date) { rec.date = p.date; rec.dateYear = p.dateYear || null; rec.dateSort = p.dateSort || 0; got = true; }
+    if (!rec.program && p.program) { rec.program = p.program; got = true; }
+    if (!rec.university && p.university) rec.university = p.university;
+    if (!rec.notifNo && p.notifNo) rec.notifNo = p.notifNo;
+    if (!rec.appeared && p.appeared) rec.appeared = p.appeared;
+    if (!rec.passed && p.passed) rec.passed = p.passed;
+    if (!rec.examStart && p.examStart) { rec.examStart = p.examStart; rec.examEnd = p.examEnd; }
+    if (!rec.colleges.length) rec.colleges = findColleges(text);
+    if (!rec.hasRD && /regional\s+director/i.test(text)) rec.hasRD = true;
+    if (got || text.trim().length > 60) rec.ocrOk = true;
+    finalizeRecord(rec);
+  }
+  function ocrRecord(file, rec){
+    rec.ocrTried = true;
+    if (!ocrAvailable()) return Promise.resolve(rec);
+    return file.arrayBuffer().then(function(buf){
+      if (window.pdfjsLib.GlobalWorkerOptions && !window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      }
+      return window.pdfjsLib.getDocument({ data: buf }).promise;
+    }).then(function(pdf){
+      var total = pdf.numPages || rec.pages || 1;
+      function renderPage(n){
+        return pdf.getPage(n).then(function(page){
+          var vp = page.getViewport({ scale: 2 });
+          var canvas = document.createElement("canvas");
+          canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
+          var ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+          return page.render({ canvasContext: ctx, viewport: vp }).promise.then(function(){ return canvas; });
+        });
+      }
+      return renderPage(1).then(function(c1){
+        return ocrCanvasText(c1).then(function(t1){
+          var needLast = total > 1 && (t1.trim().length < 40 || !findSemester(t1) || !findRegion(t1));
+          if (!needLast) return t1;
+          return renderPage(total).then(function(c2){
+            return ocrCanvasText(c2).then(function(t2){ return (t1 || "") + " \n " + (t2 || ""); });
+          }).catch(function(){ return t1; });
+        });
+      });
+    }).then(function(text){
+      if (text && text.trim().length > 30) mergeOcr(rec, text);
+      return rec;
+    }).catch(function(){ return rec; });
+  }
+
   // ---------- scanning ----------
   var scanning = false;
   function findByKey(key){
@@ -1101,6 +1446,8 @@
     });
     if (!pdfs.length) {
       progressWrap.classList.add("on");
+      uploadBox.classList.add("on"); uploadBox.classList.add("done");
+      uploadText.innerHTML = "Your files arrived — but there is no new PDF in this selection to read.";
       setProgress(100, "No new PDFs to read in that selection." + (cloned ? " " + cloned + " same-file cop" + (cloned===1?"y was":"ies were") + " added to the list and flagged DUPLICATE?." : "") + (others ? " " + others + " other file(s) were counted as non-PDF." : ""));
       render();
       return;
@@ -1108,25 +1455,47 @@
     scanning = true;
     document.body.classList.add("scanning");
     progressWrap.classList.add("on");
+    // Show the upload the moment the files are picked — before any reading
+    // starts — so it never looks like nothing is happening.
+    uploadBox.classList.add("on"); uploadBox.classList.remove("done");
+    uploadText.innerHTML = "Uploading — <b>" + all.length + "</b> file(s) received. Reading starts now, one file at a time. Please keep this page open.";
+    setProgress(0, '<span class="pct">0%</span> Files received — starting to read…');
     function step(i){
       if (i >= pdfs.length) {
         scanning = false;
         document.body.classList.remove("scanning");
         var dc = dupItems().length;
-        setProgress(100, '<span class="pct">100%</span> Done — ' + pdfs.length + " new PDF(s) deep-scanned (every page)." + (cloned ? " " + cloned + " same-file copy(ies) flagged." : "") + (others ? " " + others + " other file(s) counted." : "") + (dc ? " " + dc + " possible duplicate(s) found — see the red box below." : " No duplicates found."));
+        var ocrN = items.filter(function(x){ return x.ocrOk; }).length;
+        var photoLeft = items.filter(function(x){ return !x.readOk && !x.ocrOk; }).length;
+        setProgress(100, '<span class="pct">100%</span> All done — every file has been read. '
+          + pdfs.length + " new file(s) in this round."
+          + (ocrN ? " " + ocrN + " photo PDF(s) were read with OCR." : "")
+          + (photoLeft && !ocrAvailable() ? " " + photoLeft + " photo PDF(s) could not be read this time: the OCR reader needs an internet connection once to load. Connect once, scan again, and those will be read from the photo itself." : "")
+          + (cloned ? " " + cloned + " same-file copy(ies) flagged." : "")
+          + (others ? " " + others + " other file(s) counted." : "")
+          + (dc ? " " + dc + " possible duplicate(s) found — see the red box below." : " No duplicates found."));
+        uploadBox.classList.add("done");
+        uploadText.innerHTML = "Upload finished — all <b>" + all.length + "</b> file(s) received and read. The results are below, in simple words.";
         render();
         document.getElementById("summary").scrollIntoView({behavior: reducedMotion ? "auto" : "smooth", block:"start"});
         return;
       }
       var f = pdfs[i];
       var pct = Math.round((i / pdfs.length) * 100);
-      setProgress(pct, '<span class="pct">' + pct + '%</span> Deep-scanning ' + (i+1) + " of " + pdfs.length + " (every page): " + esc(f.name));
+      setProgress(pct, '<span class="pct">' + pct + '%</span> Reading file ' + (i+1) + " of " + pdfs.length + ", every page: " + esc(f.name));
+      uploadText.innerHTML = "Files received: <b>" + all.length + "</b> — now reading file " + (i+1) + " of " + pdfs.length + "…";
       extractPdfText(f).then(function(ex){
-        items.push(buildRecord(f, ex));
+        var rec = buildRecord(f, ex);
+        if (!rec.readOk && ocrAvailable()) {
+          setProgress(pct, '<span class="pct">' + pct + '%</span> File ' + (i+1) + " of " + pdfs.length + " is a photo PDF — reading the photo with OCR. This one takes a little longer: " + esc(f.name));
+          return ocrRecord(f, rec).then(function(){ items.push(rec); step(i+1); });
+        }
+        items.push(rec);
         step(i+1);
       });
     }
-    step(0);
+    // Let the phone draw the upload animation first, then start reading.
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ setTimeout(function(){ step(0); }, 40); }); });
   }
 
   // ---------- sorting & rendering ----------
@@ -1180,7 +1549,9 @@
     var dups = dupItems();
     setStat("statTotal", items.length);
     setStat("statRead", items.filter(function(i){return i.readOk;}).length);
-    setStat("statNameOnly", items.filter(function(i){return !i.readOk;}).length);
+    setStat("statOcr", items.filter(function(i){return i.ocrOk;}).length);
+    setStat("statKnown", items.filter(function(i){return i.known;}).length);
+    setStat("statNameOnly", items.filter(function(i){return !i.readOk && !i.ocrOk;}).length);
     setStat("statCheck", items.filter(function(i){return i.check;}).length);
     setStat("statDupe", dups.length);
     setStat("statOther", otherCount);
@@ -1189,6 +1560,16 @@
     dupBox.classList.toggle("on", dups.length > 0);
     document.getElementById("dupList").innerHTML = dups.map(function(it){
       return '<li><b>' + esc(it.fileName) + '</b><br><span class="dloc">' + esc(it.path) + '</span><br>' + esc(it.dupe) + '</li>';
+    }).join("");
+
+    var unknowns = items.filter(function(i){ return i.check && !i.dupe; });
+    var unknownBox = document.getElementById("unknownBox");
+    unknownBox.classList.toggle("on", unknowns.length > 0);
+    document.getElementById("unknownList").innerHTML = unknowns.map(function(it){
+      return '<li><span class="ufile">' + esc(it.fileName) + '</span><br><span class="uloc">' + esc(it.path) + '</span><br>'
+        + 'Not known yet: ' + esc(it.check.replace("CHECK: ", "")) + '.'
+        + (it.guess ? '<br><span class="uguess">Best guess: ' + esc(guessText(it.guess)) + ' — a guess only, please check this one yourself.</span>' : '')
+        + '</li>';
     }).join("");
 
     var cy = countsBy(function(i){ return i.year ? String(i.year) : "No date"; });
@@ -1205,29 +1586,36 @@
     if (!has) { resultsEl.innerHTML = ""; listText.value = ""; document.getElementById("reportView").classList.remove("on"); return; }
 
     var sorted = sortedItems();
+    var shown = filterText ? sorted.filter(function(it){
+      var hay = (it.fileName + " " + it.region + " " + it.session + " " + it.examType + " " + (it.program || "") + " " + semLabel(it.semester) + " " + (it.colleges || []).join(" ")).toLowerCase();
+      return hay.indexOf(filterText) >= 0;
+    }) : sorted;
     var html = "";
     var curYear = null, curRegion = null, animIdx = 0;
-    sorted.forEach(function(it){
+    shown.forEach(function(it){
       var yKey = it.year ? String(it.year) : "No date";
       if (yKey !== curYear) {
         curYear = yKey; curRegion = null;
-        var yc = sorted.filter(function(x){ return (x.year?String(x.year):"No date") === yKey; }).length;
+        var yc = shown.filter(function(x){ return (x.year?String(x.year):"No date") === yKey; }).length;
         html += '<div class="group"><div class="group-head"><span>' + esc(yKey) + '</span><span class="count">' + yc + ' result' + (yc===1?"":"s") + '</span></div>';
       }
       if (it.region !== curRegion) {
         curRegion = it.region;
-        var rc = sorted.filter(function(x){ return (x.year?String(x.year):"No date") === curYear && x.region === curRegion; }).length;
+        var rc = shown.filter(function(x){ return (x.year?String(x.year):"No date") === curYear && x.region === curRegion; }).length;
         html += '<div class="region-head"><span>' + esc(curRegion) + " — " + esc(curYear) + '</span><span>' + rc + '</span></div>';
       }
       var tags = "";
       if (it.dupe) tags += ' <span class="tag tag-dupe">DUPLICATE? — ' + esc(it.dupeKind) + '</span>';
+      if (it.known) tags += ' <span class="tag tag-known">In your known list</span>';
+      if (it.ocrOk) tags += ' <span class="tag tag-ocr">Read by OCR</span>';
       tags += it.check
         ? ' <span class="tag tag-check">' + esc(it.check) + '</span>'
-        : (it.readOk ? ' <span class="tag tag-ok">Read from PDF</span>' : ' <span class="tag tag-check">From file name only</span>');
+        : (it.readOk ? ' <span class="tag tag-ok">Read from PDF</span>' : (it.ocrOk ? '' : ' <span class="tag tag-check">From file name only</span>'));
       var delay = Math.min(animIdx * 45, 540); animIdx++;
-      html += '<div class="item' + (it.dupe ? " is-dupe" : "") + '" style="--d:' + delay + 'ms">'
+      html += '<div class="item' + (it.dupe ? " is-dupe" : "") + '" data-sem="' + (it.semester ? it.semester : "") + '" style="--d:' + delay + 'ms">'
         + '<div class="fname">' + esc(it.fileName) + tags + '</div>'
         + '<div class="loc">Location: <b>' + esc(it.path) + '</b></div>'
+        + '<div class="meta"><span>' + esc(plainLine(it)) + '</span></div>'
         + '<div class="meta">'
         + '<span>Program: <b>' + (it.program ? esc(it.program) : "— CHECK") + '</b></span>'
         + '<span>Sem: <b>' + esc(semLabel(it.semester)) + '</b></span>'
@@ -1245,19 +1633,23 @@
         + '<span>Appeared: ' + fieldOrCheck(it.appeared) + '</span>'
         + '<span>Passed: ' + fieldOrCheck(it.passed) + '</span>'
         + '<span>University: ' + fieldOrCheck(it.university) + '</span>'
-        + '<span>Read from: <b>' + (it.readOk ? "Inside the PDF (every page)" : "File name only — no readable text inside") + '</b></span>'
+        + '<span>Colleges in this result: ' + (it.colleges && it.colleges.length ? '<b>' + esc(it.colleges.join(", ")) + '</b>' : '<span class="miss">— none read</span>') + '</span>'
+        + '<span>Regional Director sign: <b>' + (it.hasRD ? "Found in the PDF" : "Not seen") + '</b></span>'
+        + '<span>Read from: <b>' + (it.readOk ? "Inside the PDF (every page)" : (it.ocrOk ? "OCR — read from the photo pages" : "File name only — no readable text inside")) + '</b></span>'
         + '</div>'
+        + (it.guess ? '<div class="guess">Best guess: <b>' + esc(guessText(it.guess)) + '</b> — this is only a guess, please check it.</div>' : '')
         + (it.dupe ? '<div class="dupnote">DUPLICATE? ' + esc(it.dupe) + '</div>' : '')
         + '</div>';
     });
-    html += "</div>";
+    if (!shown.length) html = '<p style="margin:18px 0;font-weight:600;">No result matches your search. Clear the search box to see everything again.</p>';
+    else html += "</div>";
     resultsEl.innerHTML = html;
 
     listText.value = buildTextList(sorted);
   }
 
   function detailLine(it){
-    return "      Program: " + (it.program || "CHECK")
+    var s = "      Program: " + (it.program || "CHECK")
       + " | Pages: " + (it.pages || "—")
       + " | Size: " + it.size
       + " | Exam dates: " + (it.examDates || "CHECK")
@@ -1265,16 +1657,24 @@
       + " | Appeared: " + (it.appeared || "CHECK")
       + " | Passed: " + (it.passed || "CHECK")
       + " | University: " + (it.university || "CHECK")
-      + " | Read from: " + (it.readOk ? "inside the PDF (every page)" : "file name only — no readable text inside");
+      + " | Regional Director sign: " + (it.hasRD ? "found" : "not seen")
+      + " | Read from: " + (it.readOk ? "inside the PDF (every page)" : (it.ocrOk ? "OCR — read from the photo pages" : "file name only — no readable text inside"));
+    s += "\n      In simple words: " + plainLine(it);
+    if (it.colleges && it.colleges.length) s += "\n      Colleges in this result: " + it.colleges.join(", ");
+    if (it.known) s += "\n      This result is already in your known list of 181 results.";
+    if (it.guess) s += "\n      Best guess: " + guessText(it.guess) + " (a guess only — please check)";
+    return s;
   }
   function buildTextList(sorted){
     var main = mainItems(sorted);
     var dups = sorted.filter(function(i){ return !!i.dupe; });
     var lines = [];
-    lines.push("KMU RESULTS — DEEP SCAN REPORT");
-    lines.push("Order: Year, then Region, then Semester.");
-    lines.push("PDFs found: " + sorted.length + " (main list: " + main.length + ", possible duplicates: " + dups.length + "). Other (non-PDF) files seen: " + otherCount + ".");
-    lines.push("Every page of each PDF was read on the phone. Batch marked CHECK is calculated, not written in the result. A field marked CHECK could not be found.");
+    lines.push("KMU RESULTS — SCAN REPORT (written in simple words)");
+    lines.push("What this is: every result PDF you picked, read one by one and written in one clean list.");
+    lines.push("The list is arranged the way you arrange your results: year first, then region, then semester.");
+    lines.push("Total files: " + sorted.length + ". Different results: " + main.length + ". Same result found more than once: " + dups.length + ". Other (non-PDF) files seen: " + otherCount + ".");
+    lines.push("Read from inside the PDF: " + items.filter(function(i){return i.readOk;}).length + ". Photo PDFs read by OCR: " + items.filter(function(i){return i.ocrOk;}).length + ". Matched with your known list of 181 results: " + items.filter(function(i){return i.known;}).length + ".");
+    lines.push("Where a word says CHECK, that thing could not be found in the PDF — please check that one yourself. A batch marked CHECK is worked out from the semester and the year; it is not written inside the result. A line that says 'Best guess' is only a guess, not a fact.");
     lines.push("");
     lines.push("===== MAIN LIST (each result counted once) =====");
     var curYear = null, curRegion = null, n = 0;
@@ -1309,12 +1709,13 @@
 
   function csvCell(v){ return '"' + String(v == null ? "" : v).replace(/"/g,'""') + '"'; }
   function buildCsv(){
-    var rows = [["No","Year","Region","Program","Semester","Session","Type","Result Date","Exam Dates","Notification / Result No","Appeared","Passed","University","Pages","Size","Batch","Batch From","Folder Location","Folder","File Name","Read From","Duplicate?","Duplicate Detail","Note"]];
+    var rows = [["No","Year","Region","Program","Semester","Session","Type","Result Date","Exam Dates","Notification / Result No","Appeared","Passed","University","Pages","Size","Batch","Batch From","Folder Location","Folder","File Name","Read From","Duplicate?","Duplicate Detail","Note","In Simple Words","Colleges In This Result","Regional Director Sign","Read By OCR","In Your Known List","Best Guess"]];
     sortedItems().forEach(function(it, i){
       rows.push([i+1, it.year || "No date", it.region, it.program || "CHECK", semLabel(it.semester), it.session, it.examType, it.date,
                  it.examDates || "CHECK", it.notifNo || "CHECK", it.appeared || "CHECK", it.passed || "CHECK", it.university || "CHECK",
                  it.pages || "", it.size, it.batch, it.batchHow, it.path, it.folder, it.fileName,
-                 it.readOk ? "Inside PDF (every page)" : "File name only", it.dupe ? "DUPLICATE?" : "", it.dupe || "", it.check || ""]);
+                 it.readOk ? "Inside PDF (every page)" : (it.ocrOk ? "OCR (photo pages)" : "File name only"), it.dupe ? "DUPLICATE?" : "", it.dupe || "", it.check || "",
+                 plainLine(it), (it.colleges || []).join("; "), it.hasRD ? "Found" : "Not seen", it.ocrOk ? "Yes" : "", it.known ? "Yes" : "", guessText(it.guess)]);
     });
     return rows.map(function(r){ return r.map(csvCell).join(","); }).join("\n");
   }
@@ -1439,14 +1840,18 @@
     var main = mainItems(sorted);
     var dups = sorted.filter(function(i){ return !!i.dupe; });
     var readN = items.filter(function(i){return i.readOk;}).length;
+    var ocrN = items.filter(function(i){return i.ocrOk;}).length;
+    var knownN = items.filter(function(i){return i.known;}).length;
     var chkN = items.filter(function(i){return i.check;}).length;
     var h = "";
-    h += "<h2>KMU Results — Deep Scan Report</h2>";
-    h += "<p>Order: Year, then Region, then Semester. Every page of each PDF was read on the phone.</p>";
-    h += "<p><b>PDFs found:</b> " + sorted.length + " &nbsp;|&nbsp; <b>Main list:</b> " + main.length
-       + " &nbsp;|&nbsp; <b>Possible duplicates:</b> " + dups.length
+    h += "<h2>KMU Results — Scan Report</h2>";
+    h += "<p>Written in simple words. Every result you picked, read one by one. The list is arranged by year first, then region, then semester.</p>";
+    h += "<p><b>Total files:</b> " + sorted.length + " &nbsp;|&nbsp; <b>Different results:</b> " + main.length
+       + " &nbsp;|&nbsp; <b>Same result more than once:</b> " + dups.length
        + " &nbsp;|&nbsp; <b>Read from inside the PDF:</b> " + readN
-       + " &nbsp;|&nbsp; <b>File name only:</b> " + (items.length - readN)
+       + " &nbsp;|&nbsp; <b>Photo PDFs read by OCR:</b> " + ocrN
+       + " &nbsp;|&nbsp; <b>In your known list:</b> " + knownN
+       + " &nbsp;|&nbsp; <b>File name only:</b> " + (items.length - readN - ocrN)
        + " &nbsp;|&nbsp; <b>Need a check:</b> " + chkN
        + " &nbsp;|&nbsp; <b>Other (non-PDF) files:</b> " + otherCount + "</p>";
     h += "<h3>Main list — each result counted once</h3>";
@@ -1457,7 +1862,7 @@
         + esc(it.examType) + "</td><td>" + esc(it.date) + "</td><td>" + esc(it.examDates || "CHECK") + "</td><td>"
         + esc(it.notifNo || "CHECK") + "</td><td>" + esc(it.appeared || "CHECK") + "</td><td>" + esc(it.passed || "CHECK") + "</td><td>"
         + esc(it.batch) + "</td><td>" + esc(it.pages || "—") + "</td><td>" + esc(it.path) + "</td><td>" + esc(it.fileName) + "</td><td>"
-        + esc(it.check || (it.readOk ? "" : "File name only")) + "</td></tr>";
+        + esc([it.check, it.known ? "In your known list" : "", it.ocrOk ? "Read by OCR" : "", (it.readOk || it.ocrOk) ? "" : "File name only", it.guess ? ("Best guess: " + guessText(it.guess)) : "", (it.colleges && it.colleges.length) ? ("Colleges: " + it.colleges.join(", ")) : "", plainLine(it)].filter(Boolean).join(" · ")) + "</td></tr>";
     });
     h += "</tbody></table></div>";
     h += "<h3>Duplicates — not counted in the main list</h3>";
@@ -1470,7 +1875,7 @@
       });
       h += "</ul>";
     }
-    h += "<p>Batch marked CHECK is calculated from Semester + exam year, not written in the result. A field marked CHECK could not be found in the PDF or the file name.</p>";
+    h += "<p>Where a word says CHECK, that thing could not be found in the PDF — please check that one yourself. A batch marked CHECK is worked out from the semester and the year; it is not written inside the result. A line that says 'Best guess' is only a guess, not a fact.</p>";
     return h;
   }
   function fullReportHtml(){
