@@ -1,0 +1,36 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.tufail.kmu.scanner'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.tufail.kmu.scanner'
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // Always compile as UTF-8, whatever the machine's default charset is.
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+    }
+}
+
+dependencies {
+    // No libraries needed: plain Android WebView + Java only.
+}
