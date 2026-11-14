@@ -1,0 +1,1552 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<meta name="theme-color" content="#0c5c46" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="KMU Scanner" />
+<link rel="icon" href="data:," />
+<title>KMU Results Scanner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#e8efe7;
+    --bg-dots:#d3e0d2;
+    --surface:#ffffff;
+    --surface2:#eef4ed;
+    --ink:#132018;
+    --ink2:#4c5b50;
+    --line:#ccd9cc;
+    --teal:#0c5c46;
+    --teal-bright:#0f7a5c;
+    --teal-soft:#ddefe4;
+    --amber:#9c6a00;
+    --amber-soft:#fbeecb;
+    --red:#a33327;
+    --red-soft:#fbe7e3;
+    --beam:rgba(15,122,92,.16);
+    --shadow:0 10px 30px rgba(16,50,36,.10);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#08110c;
+      --bg-dots:#12241a;
+      --surface:#131f17;
+      --surface2:#1b2a20;
+      --ink:#ecf4ed;
+      --ink2:#a2b3a6;
+      --line:#2b3d30;
+      --teal:#54cf9f;
+      --teal-bright:#7ce3ba;
+      --teal-soft:#173528;
+      --amber:#eeb84e;
+      --amber-soft:#3a2e0e;
+      --red:#f59a86;
+      --red-soft:#3c1d16;
+      --beam:rgba(84,207,159,.14);
+      --shadow:0 10px 30px rgba(0,0,0,.45);
+      color-scheme: dark;
+    }
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0; color:var(--ink);
+    font-family:"Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size:16px; line-height:1.55;
+    background:
+      radial-gradient(var(--bg-dots) 1.2px, transparent 1.3px) 0 0/22px 22px,
+      var(--bg);
+    animation:bgDrift 26s linear infinite;
+  }
+  @keyframes bgDrift{ from{background-position:0 0, 0 0;} to{background-position:220px 220px, 0 0;} }
+  .wrap{max-width:880px; margin:0 auto; padding:22px 16px 64px;}
+
+  /* ---------- hero ---------- */
+  .hero{
+    position:relative; overflow:hidden;
+    display:flex; align-items:center; gap:18px;
+    background:linear-gradient(120deg, var(--teal) 0%, var(--teal-bright) 78%);
+    color:#fff; border-radius:22px; padding:24px 22px;
+    box-shadow:var(--shadow);
+    animation:heroIn .7s cubic-bezier(.2,.8,.3,1) both;
+  }
+  @media (prefers-color-scheme: dark){ .hero{color:#07130d;} }
+  .hero::before{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background:repeating-linear-gradient(0deg, rgba(255,255,255,.05) 0 2px, transparent 2px 7px);
+    animation:scanShift 9s linear infinite;
+  }
+  @keyframes scanShift{ from{transform:translateY(0);} to{transform:translateY(28px);} }
+  .hero::after{
+    content:""; position:absolute; top:-10%; bottom:-10%; width:70px; left:-90px; pointer-events:none;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+    transform:skewX(-14deg);
+    animation:beamSweep 4.6s ease-in-out infinite;
+  }
+  @keyframes beamSweep{ 0%,55%{left:-90px;} 90%,100%{left:110%;} }
+  @keyframes heroIn{ from{opacity:0; transform:translateY(14px) scale(.985);} to{opacity:1; transform:none;} }
+  .hero-mark{
+    flex:0 0 auto; width:64px; height:64px; border-radius:16px;
+    background:rgba(255,255,255,.16);
+    display:flex; align-items:center; justify-content:center;
+    position:relative; z-index:1;
+  }
+  .hero-mark svg{width:40px; height:40px; display:block;}
+  .hero-mark .scanbar{ animation:scanBar 2.6s ease-in-out infinite; }
+  @keyframes scanBar{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(15px);} }
+  .hero h1{
+    font-family:"Bricolage Grotesque","Public Sans",sans-serif;
+    font-size:clamp(28px,6.4vw,42px); line-height:1.05; margin:0; font-weight:800; letter-spacing:-.01em;
+    position:relative; z-index:1;
+  }
+  .hero .uni{
+    margin:4px 0 0; font-size:14.5px; font-weight:600; opacity:.85; letter-spacing:.04em;
+    position:relative; z-index:1;
+  }
+  h2{font-size:20px; margin:0 0 8px; font-weight:700;}
+  h3{font-size:15px; margin:0 0 6px; font-weight:700;}
+  p{margin:0 0 10px;}
+
+  /* ---------- picker ---------- */
+  .picker{
+    position:relative; overflow:hidden;
+    background:var(--surface); border:1.5px dashed var(--teal);
+    border-radius:20px; padding:26px 18px 20px; text-align:center; margin:20px 0 12px;
+    box-shadow:var(--shadow);
+    animation:heroIn .7s .08s cubic-bezier(.2,.8,.3,1) both;
+  }
+  .picker::after{
+    content:""; position:absolute; left:0; right:0; top:-40px; height:38px; pointer-events:none;
+    background:linear-gradient(180deg, transparent, var(--beam), transparent);
+    animation:pickerScan 3.8s ease-in-out infinite;
+  }
+  @keyframes pickerScan{ 0%{top:-42px;} 55%,100%{top:105%;} }
+  body.scanning .picker::after{animation-duration:1.1s;}
+  .picker-icon{position:relative; width:76px; height:76px; margin:2px auto 6px;}
+  .picker-icon .ring{
+    position:absolute; inset:0; border-radius:50%; border:2px solid var(--teal);
+    opacity:0; animation:ringPulse 2.8s ease-out infinite;
+  }
+  .picker-icon .ring.r2{animation-delay:1.4s;}
+  @keyframes ringPulse{ 0%{transform:scale(.55); opacity:.75;} 70%{opacity:0;} 100%{transform:scale(1.25); opacity:0;} }
+  body.scanning .picker-icon .ring{animation-duration:1.2s;}
+  .picker-icon .core{
+    position:absolute; inset:14px; border-radius:50%;
+    background:var(--teal-soft); display:flex; align-items:center; justify-content:center;
+    animation:coreBob 3.2s ease-in-out infinite;
+  }
+  @keyframes coreBob{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-4px);} }
+  body.scanning .picker-icon .core{animation:coreSpinPulse 1s ease-in-out infinite;}
+  @keyframes coreSpinPulse{ 0%,100%{transform:scale(1);} 50%{transform:scale(1.1);} }
+  .picker-icon svg{width:28px; height:28px;}
+  .file-controls{display:grid; gap:12px; margin:12px auto 4px; max-width:560px; text-align:left; position:relative; z-index:1;}
+  @media(min-width:640px){ .file-controls{grid-template-columns:1fr 1fr;} }
+  .file-control{display:block; background:var(--bg); border:1px solid var(--line); border-radius:14px; padding:12px; transition:transform .15s ease, border-color .15s ease;}
+  .file-control:hover{transform:translateY(-1px); border-color:var(--teal);}
+  .file-control .fc-title{display:block; font-weight:700; margin-bottom:8px; font-size:15px;}
+  .file-control input[type="file"]{font:inherit; font-size:14px; width:100%; color:var(--ink2);}
+  .file-control input[type="file"]::file-selector-button{
+    font:inherit; font-weight:700; cursor:pointer; border-radius:10px;
+    padding:12px 16px; margin-right:10px; min-height:48px;
+    background:var(--surface); color:var(--ink); border:1px solid var(--line);
+  }
+  .file-control.primary{background:var(--teal-soft); border-color:var(--teal);}
+  .file-control.primary input[type="file"]::file-selector-button{
+    background:var(--teal); color:#fff; border-color:transparent;
+  }
+  @media (prefers-color-scheme: dark){ .file-control.primary input[type="file"]::file-selector-button{color:#07130d;} }
+
+  /* ---------- buttons ---------- */
+  button, .btn{
+    font:inherit; font-weight:700; cursor:pointer; border-radius:12px;
+    padding:14px 20px; border:1px solid transparent; min-height:52px;
+    transition:transform .12s ease, filter .12s ease;
+  }
+  button:active{transform:scale(.97);}
+  .btnrow{display:flex; flex-wrap:wrap; gap:10px; justify-content:flex-start; margin:10px 0 4px;}
+  .btn-primary{background:var(--teal); color:#fff; font-size:16px; position:relative; overflow:hidden;}
+  @media (prefers-color-scheme: dark){ .btn-primary{color:#07130d;} }
+  .btn-primary::after{
+    content:""; position:absolute; top:0; bottom:0; width:36px; left:-50px;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent);
+    transform:skewX(-16deg); transition:left .45s ease;
+  }
+  .btn-primary:hover::after{left:115%;}
+  .btn-ghost{background:var(--surface); color:var(--ink); border-color:var(--line);}
+  .btn-ghost:hover{border-color:var(--teal);}
+  .btn-small{padding:10px 14px; min-height:44px; font-size:14.5px;}
+  button:disabled{opacity:.5; cursor:default;}
+  button:focus-visible, textarea:focus-visible{outline:3px solid var(--amber); outline-offset:2px;}
+
+  /* ---------- progress ---------- */
+  .progress-wrap{margin:18px 0; display:none;}
+  .progress-wrap.on{display:block; animation:heroIn .4s ease both;}
+  .bar{height:14px; background:var(--surface2); border-radius:99px; overflow:hidden; border:1px solid var(--line);}
+  .bar > div{
+    height:100%; width:0%; border-radius:99px;
+    background:repeating-linear-gradient(45deg, var(--teal) 0 14px, var(--teal-bright) 14px 28px);
+    background-size:40px 100%;
+    animation:stripes 0.8s linear infinite;
+    transition:width .25s ease;
+  }
+  @keyframes stripes{ from{background-position:0 0;} to{background-position:40px 0;} }
+  .progress-text{font-size:14px; color:var(--ink2); margin-top:7px; font-weight:600; word-break:break-word;}
+  .progress-text .pct{font-family:"IBM Plex Mono",monospace; color:var(--teal); font-weight:600;}
+
+  /* ---------- summary ---------- */
+  .summary{display:none; margin:24px 0 6px;}
+  .summary.on{display:block;}
+  .statgrid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:4px 0 14px;}
+  @media(min-width:640px){ .statgrid{grid-template-columns:repeat(3,1fr);} }
+  .stat{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:12px 14px;
+    box-shadow:var(--shadow);
+    animation:pop .5s cubic-bezier(.2,.8,.3,1.4) both; animation-delay:var(--d,0ms);
+  }
+  @keyframes pop{ from{opacity:0; transform:scale(.92) translateY(8px);} to{opacity:1; transform:none;} }
+  .stat .big{font-family:"Bricolage Grotesque",sans-serif; font-size:30px; font-weight:800; line-height:1.1; color:var(--teal);}
+  .stat .lbl{font-size:13px; color:var(--ink2); font-weight:600;}
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 12px;}
+  .chip{
+    background:var(--teal-soft); color:var(--ink); border-radius:99px; padding:5px 12px;
+    font-size:13.5px; font-weight:600;
+    animation:pop .4s ease both; animation-delay:var(--d,0ms);
+  }
+  .chip.warn{background:var(--amber-soft);}
+  .chip-lbl{font-size:12.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--ink2); margin-top:10px;}
+
+  /* ---------- results ---------- */
+  .group{margin:26px 0 0;}
+  .group-head{
+    position:sticky; top:8px; z-index:2;
+    background:linear-gradient(120deg, var(--teal), var(--teal-bright)); color:#fff;
+    border-radius:12px; box-shadow:var(--shadow);
+    padding:10px 14px; font-weight:800; font-size:17px;
+    display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    animation:rise .5s ease both;
+  }
+  @media (prefers-color-scheme: dark){ .group-head{color:#07130d;} }
+  .group-head .count{font-weight:600; font-size:14px; opacity:.9;}
+  .region-head{
+    margin:16px 0 8px; font-weight:700; font-size:15px; color:var(--teal);
+    border-bottom:2px solid var(--teal-soft); padding-bottom:4px;
+    display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    animation:rise .5s ease both;
+  }
+  .item{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    padding:12px 14px; margin:0 0 8px; box-shadow:var(--shadow);
+    animation:rise .55s cubic-bezier(.2,.8,.3,1) both; animation-delay:var(--d,0ms);
+  }
+  @keyframes rise{ from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+  .item .fname{font-weight:700; word-break:break-word; font-size:15px;}
+  .item .meta{display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:6px; font-size:14px; color:var(--ink2);}
+  .item .meta b{color:var(--ink); font-weight:600;}
+  .item .loc{
+    margin-top:8px; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12.5px;
+    color:var(--ink2); background:var(--surface2); border-radius:8px; padding:6px 9px;
+    word-break:break-all;
+  }
+  .item .loc b{color:var(--teal); font-weight:600;}
+  .tag{display:inline-block; font-size:12px; font-weight:700; border-radius:6px; padding:2px 8px; vertical-align:middle;}
+  .tag-ok{background:var(--teal-soft);}
+  .tag-check{background:var(--amber-soft); color:var(--amber);}
+  .tag-bad{background:var(--red-soft); color:var(--red);}
+  .item.is-dupe{border:1.5px dashed var(--red); background:var(--red-soft);}
+  .tag-dupe{background:var(--red); color:#fff; animation:dupePulse 1.6s ease-in-out infinite;}
+  @keyframes dupePulse{ 0%,100%{opacity:1;} 50%{opacity:.55;} }
+  @media (prefers-color-scheme: dark){ .tag-dupe{color:#1a0d0a;} }
+  .item .meta2{
+    display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:8px; padding-top:8px;
+    border-top:1px solid var(--line); font-size:13.5px; color:var(--ink2);
+  }
+  .item .meta2 b{color:var(--ink); font-weight:600;}
+  .item .meta2 .miss{color:var(--amber); font-weight:700;}
+  .item .dupnote{margin-top:8px; font-size:14px; font-weight:600; color:var(--red); word-break:break-word;}
+
+  /* ---------- duplicates box ---------- */
+  .dupbox{
+    display:none; background:var(--surface); border:1.5px solid var(--red);
+    border-radius:18px; padding:18px; margin:26px 0 0; box-shadow:var(--shadow);
+  }
+  .dupbox.on{display:block; animation:rise .5s ease both;}
+  .dupbox h2{color:var(--red);}
+  .dupbox ul{margin:8px 0 0; padding-left:20px;}
+  .dupbox li{margin:0 0 8px; font-size:14.5px; word-break:break-word;}
+  .dupbox .dloc{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink2);}
+
+  /* ---------- send / downloads ---------- */
+  .sendbox{
+    display:none; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:18px; margin:30px 0 0; box-shadow:var(--shadow);
+  }
+  .sendbox.on{display:block; animation:rise .5s ease both;}
+  .sendbox textarea{
+    width:100%; min-height:170px; border:1px solid var(--line); border-radius:10px;
+    background:var(--bg); color:var(--ink); padding:12px; font-size:13px;
+    font-family:"IBM Plex Mono", ui-monospace, monospace; line-height:1.5;
+  }
+  .msg{font-size:14.5px; font-weight:600; margin-top:10px; min-height:22px;}
+  .msg.good{color:var(--teal);}
+  .again{margin-top:14px; text-align:center;}
+
+  /* ---------- report view ---------- */
+  .report-view{
+    display:none; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:20px 18px; margin:30px 0 0;
+  }
+  .report-view.on{display:block; animation:rise .5s ease both;}
+  .report-view h2{font-size:22px;}
+  .report-view h3{margin-top:20px;}
+  .report-view table{width:100%; border-collapse:collapse; font-size:13px;}
+  .report-view th, .report-view td{border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; word-break:break-word;}
+  .report-view th{background:var(--surface2); font-weight:700;}
+  .report-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  @media print{
+    body{background:#fff; animation:none;}
+    .wrap > *:not(.report-view){display:none !important;}
+    .report-view{display:block !important; border:none; padding:0; margin:0; animation:none;}
+    .report-view .no-print{display:none !important;}
+    .report-scroll{overflow:visible;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{ animation:none !important; transition:none !important; }
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+
+  <header class="hero">
+    <div class="hero-mark" aria-hidden="true">
+      <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+        <rect x="11" y="5" width="26" height="38" rx="4" fill="rgba(255,255,255,.92)"/>
+        <line x1="17" y1="15" x2="31" y2="15" stroke="#0c5c46" stroke-width="3" stroke-linecap="round"/>
+        <line x1="17" y1="22" x2="31" y2="22" stroke="#0c5c46" stroke-width="3" stroke-linecap="round" opacity=".65"/>
+        <line x1="17" y1="29" x2="26" y2="29" stroke="#0c5c46" stroke-width="3" stroke-linecap="round" opacity=".4"/>
+        <g class="scanbar"><rect x="14" y="11" width="20" height="4" rx="2" fill="#e8a33d"/></g>
+      </svg>
+    </div>
+    <div>
+      <h1>KMU Results Scanner</h1>
+      <p class="uni">KHYBER MEDICAL UNIVERSITY</p>
+    </div>
+  </header>
+
+  <section class="picker" id="dropZone" aria-label="Choose folder or files">
+    <div class="picker-icon" aria-hidden="true">
+      <span class="ring"></span><span class="ring r2"></span>
+      <span class="core">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2.5h7A2.5 2.5 0 0 1 21 10v7a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17V7.5Z" fill="#0c5c46" opacity=".9"/><path d="M3 10h18v7a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17v-7Z" fill="#0f7a5c"/></svg>
+      </span>
+    </div>
+    <div class="file-controls">
+      <label class="file-control primary"><span class="fc-title">📁 Pick a folder</span>
+        <input type="file" id="folderInput" webkitdirectory directory multiple />
+      </label>
+      <label class="file-control"><span class="fc-title">Pick many files</span>
+        <input type="file" id="filesInput" accept="application/pdf,.pdf" multiple />
+      </label>
+    </div>
+  </section>
+
+  <div class="progress-wrap" id="progressWrap" aria-live="polite">
+    <div class="bar"><div id="barFill"></div></div>
+    <div class="progress-text" id="progressText">Starting…</div>
+  </div>
+
+  <section class="summary" id="summary" aria-live="polite">
+    <div class="statgrid">
+      <div class="stat" style="--d:0ms"><div class="big" id="statTotal" data-v="0">0</div><div class="lbl">PDFs listed</div></div>
+      <div class="stat" style="--d:60ms"><div class="big" id="statRead" data-v="0">0</div><div class="lbl">Read from inside the PDF</div></div>
+      <div class="stat" style="--d:120ms"><div class="big" id="statNameOnly" data-v="0">0</div><div class="lbl">File name only</div></div>
+      <div class="stat" style="--d:180ms"><div class="big" id="statCheck" data-v="0">0</div><div class="lbl">Need a check (CHECK)</div></div>
+      <div class="stat" style="--d:240ms"><div class="big" id="statDupe" data-v="0">0</div><div class="lbl">Possible duplicates</div></div>
+      <div class="stat" style="--d:300ms"><div class="big" id="statOther" data-v="0">0</div><div class="lbl">Other files (not PDFs)</div></div>
+    </div>
+    <div class="chip-lbl">Year</div>
+    <div class="chips" id="chipsYear"></div>
+    <div class="chip-lbl">Region</div>
+    <div class="chips" id="chipsRegion"></div>
+    <div class="chip-lbl">Exam type</div>
+    <div class="chips" id="chipsType"></div>
+  </section>
+
+  <section class="dupbox" id="dupBox" aria-live="polite">
+    <h2>Possible duplicates</h2>
+    <ul id="dupList"></ul>
+  </section>
+
+  <div id="results"></div>
+
+  <section class="sendbox" id="sendBox">
+    <h2>Report</h2>
+    <textarea id="listText" readonly aria-label="Scan list"></textarea>
+    <div class="btnrow">
+      <button type="button" class="btn-primary btn-small" id="copyBtn">Copy the list</button>
+      <button type="button" class="btn-ghost btn-small" id="shareBtn">Share the list</button>
+    </div>
+    <div class="btnrow">
+      <button type="button" class="btn-primary btn-small" id="dlPdfBtn">Download report (.pdf)</button>
+      <button type="button" class="btn-primary btn-small" id="dlDocBtn">Download report (.doc)</button>
+    </div>
+    <div class="btnrow">
+      <button type="button" class="btn-ghost btn-small" id="dlTxtBtn">Download list (.txt)</button>
+      <button type="button" class="btn-ghost btn-small" id="dlCsvBtn">Download sheet (.csv)</button>
+      <button type="button" class="btn-ghost btn-small" id="dlHtmlBtn">Download full report (.html)</button>
+      <button type="button" class="btn-ghost btn-small" id="reportBtn">Open printable report</button>
+    </div>
+    <div class="msg" id="copyMsg" aria-live="polite"></div>
+    <div class="again">
+      <button type="button" class="btn-ghost btn-small" id="moreBtn">Scan another folder</button>
+      <button type="button" class="btn-ghost btn-small" id="clearBtn">Start again (clear list)</button>
+    </div>
+  </section>
+
+  <section class="report-view" id="reportView" aria-label="Printable report"></section>
+
+</main>
+
+<script>
+(function(){
+  "use strict";
+  var reducedMotion = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+  // ---------- Built-in PDF reader (bundled in this page, no CDN) ----------
+  // A small, ordinary-JavaScript PDF text reader written for this page.
+  // Pass 1: find every stream in the file and inflate the Flate ones with the
+  // browser's built-in DecompressionStream.
+  // Pass 2: read the ToUnicode CMaps (the tables that say which drawn glyph
+  // code means which real letter) and link them to font names.
+  // Pass 3: walk each page content stream as real PDF operators (Tf, Tj, TJ,
+  // Td, Tm …), decoding shown text through the right font map and keeping
+  // real word gaps, instead of guessing letters out of raw bytes.
+  // It needs no library, no worker file and no internet.
+  function bytesToLatin1(bytes, start, end){
+    var s = "", CH = 8192, i;
+    start = start || 0; end = (end == null ? bytes.length : end);
+    for (i = start; i < end; i += CH) {
+      s += String.fromCharCode.apply(null, bytes.subarray(i, Math.min(i + CH, end)));
+    }
+    return s;
+  }
+  function inflateBytes(bytes){
+    // Returns a Promise for a Uint8Array, or null if it cannot be inflated.
+    if (typeof DecompressionStream === "undefined") return Promise.resolve(null);
+    function attempt(fmt){
+      try {
+        var stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream(fmt));
+        return new Response(stream).arrayBuffer().then(function(ab){ return new Uint8Array(ab); });
+      } catch(e) { return Promise.reject(e); }
+    }
+    return attempt("deflate").catch(function(){ return attempt("deflate-raw"); }).catch(function(){ return null; });
+  }
+  // WinAnsi high-byte characters (smart quotes, dashes, bullet …) so decoded
+  // text comes out as real characters, not control codes.
+  var WINANSI_SPECIAL = {128:"€",130:"‚",131:"ƒ",132:"„",133:"…",134:"†",135:"‡",136:"ˆ",137:"‰",138:"Š",139:"‹",140:"Œ",142:"Ž",145:"‘",146:"’",147:"“",148:"”",149:"•",150:"–",151:"—",152:"˜",153:"™",154:"š",155:"›",156:"œ",158:"ž",159:"Ÿ"};
+  function winAnsiChar(b){ return WINANSI_SPECIAL[b] || String.fromCharCode(b); }
+  function winAnsiFix(s){
+    return s.replace(/[\u0080-\u009f]/g, function(c){ return WINANSI_SPECIAL[c.charCodeAt(0)] || c; });
+  }
+  function decodeLiteralString(raw){
+    var out = "", i, c;
+    for (i = 0; i < raw.length; i++) {
+      c = raw.charAt(i);
+      if (c === "\\" && i + 1 < raw.length) {
+        var n = raw.charAt(i + 1);
+        if (n === "n") { out += "\n"; i++; }
+        else if (n === "r") { out += "\r"; i++; }
+        else if (n === "t") { out += "\t"; i++; }
+        else if (n === "b") { out += "\b"; i++; }
+        else if (n === "f") { out += "\f"; i++; }
+        else if (n === "(" || n === ")" || n === "\\") { out += n; i++; }
+        else if (n >= "0" && n <= "7") {
+          var oct = n, j = i + 2;
+          while (j < raw.length && j < i + 4 && raw.charAt(j) >= "0" && raw.charAt(j) <= "7") { oct += raw.charAt(j); j++; }
+          out += String.fromCharCode(parseInt(oct, 8) & 255); i = j - 1;
+        }
+        else if (n === "\n") { i++; }
+        else if (n === "\r") { i++; if (raw.charAt(i + 1) === "\n") i++; }
+        else { out += n; i++; }
+      } else { out += c; }
+    }
+    return out;
+  }
+  function hexToBytes(hex){
+    var h = hex.replace(/\s+/g, "");
+    if (h.length % 2) h += "0";
+    var bytes = [], i;
+    for (i = 0; i + 1 < h.length; i += 2) {
+      var v = parseInt(h.substr(i, 2), 16);
+      bytes.push(isNaN(v) ? 0 : v);
+    }
+    return bytes;
+  }
+  function uniHexToStr(hex){
+    var out = "", i;
+    if (hex.length >= 4 && hex.length % 4 === 0) {
+      for (i = 0; i < hex.length; i += 4) out += String.fromCharCode(parseInt(hex.substr(i, 4), 16));
+      return out;
+    }
+    if (hex.length % 2 === 0 && hex.length) {
+      for (i = 0; i < hex.length; i += 2) out += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+      return out;
+    }
+    return String.fromCharCode(parseInt(hex, 16) || 0);
+  }
+  // Parse a ToUnicode CMap stream into { map: code -> text, lens: [byte lengths, longest first] }.
+  function parseCMap(text){
+    var map = {}, lens = {}, m, mm;
+    var csRe = /begincodespacerange([\s\S]*?)endcodespacerange/g;
+    while ((m = csRe.exec(text)) !== null) {
+      var r1 = /<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/g;
+      while ((mm = r1.exec(m[1])) !== null) lens[mm[1].length / 2] = true;
+    }
+    var bfRe = /beginbfchar([\s\S]*?)endbfchar/g;
+    while ((m = bfRe.exec(text)) !== null) {
+      var r2 = /<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/g;
+      while ((mm = r2.exec(m[1])) !== null) { map[parseInt(mm[1], 16)] = uniHexToStr(mm[2]); lens[mm[1].length / 2] = true; }
+    }
+    var brRe = /beginbfrange([\s\S]*?)endbfrange/g;
+    while ((m = brRe.exec(text)) !== null) {
+      var body = m[1];
+      var rArr = /<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>\s*\[([^\]]*)\]/g;
+      while ((mm = rArr.exec(body)) !== null) {
+        var lo = parseInt(mm[1], 16);
+        var dsts = mm[3].match(/<([0-9A-Fa-f]+)>/g) || [];
+        for (var q = 0; q < dsts.length; q++) map[lo + q] = uniHexToStr(dsts[q].replace(/[<>]/g, ""));
+        lens[mm[1].length / 2] = true;
+      }
+      var body2 = body.replace(/<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>\s*\[[^\]]*\]/g, " ");
+      var rSeq = /<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/g;
+      while ((mm = rSeq.exec(body2)) !== null) {
+        var lo2 = parseInt(mm[1], 16), hi2 = parseInt(mm[2], 16), d0 = parseInt(mm[3], 16);
+        for (var c = lo2; c <= hi2 && c - lo2 < 20000; c++) map[c] = String.fromCharCode(d0 + (c - lo2));
+        lens[mm[1].length / 2] = true;
+      }
+    }
+    var lensArr = Object.keys(lens).map(function(k){ return parseInt(k, 10); }).sort(function(a,b){ return b - a; });
+    if (!lensArr.length) lensArr = [1];
+    return { map: map, lens: lensArr };
+  }
+  function decodeBytesWithCmap(bytes, cmap){
+    var out = "", i;
+    if (!cmap) {
+      if (bytes.length >= 2 && bytes[0] === 254 && bytes[1] === 255) {
+        for (i = 2; i + 1 < bytes.length; i += 2) out += String.fromCharCode((bytes[i] << 8) | bytes[i + 1]);
+        return out;
+      }
+      for (i = 0; i < bytes.length; i++) out += winAnsiChar(bytes[i]);
+      return out;
+    }
+    var idx = 0;
+    while (idx < bytes.length) {
+      var matched = false;
+      for (var li = 0; li < cmap.lens.length; li++) {
+        var L = cmap.lens[li];
+        if (idx + L > bytes.length) continue;
+        var code = 0;
+        for (var b = 0; b < L; b++) code = (code << 8) | bytes[idx + b];
+        if (Object.prototype.hasOwnProperty.call(cmap.map, code)) { out += cmap.map[code]; idx += L; matched = true; break; }
+      }
+      if (!matched) { out += winAnsiChar(bytes[idx]); idx++; }
+    }
+    return out;
+  }
+  function decodeStrWithCmap(str, cmap){
+    if (!cmap) return winAnsiFix(str);
+    var bytes = [];
+    for (var i = 0; i < str.length; i++) bytes.push(str.charCodeAt(i) & 255);
+    return decodeBytesWithCmap(bytes, cmap);
+  }
+  function isWsChar(ch){ return ch === " " || ch === "\t" || ch === "\n" || ch === "\r" || ch === "\f" || ch === "\0"; }
+  function tokenizeContent(content){
+    var tokens = [], i = 0, len = content.length;
+    while (i < len) {
+      var ch = content.charAt(i);
+      if (ch === "%") { while (i < len && content.charAt(i) !== "\n" && content.charAt(i) !== "\r") i++; continue; }
+      if (isWsChar(ch)) { i++; continue; }
+      if (ch === "(") {
+        var depth = 1, j = i + 1, raw = "";
+        while (j < len && depth > 0) {
+          var cj = content.charAt(j);
+          if (cj === "\\" && j + 1 < len) { raw += cj + content.charAt(j + 1); j += 2; continue; }
+          if (cj === "(") { depth++; raw += cj; j++; continue; }
+          if (cj === ")") { depth--; if (depth > 0) raw += cj; j++; continue; }
+          raw += cj; j++;
+        }
+        tokens.push({t:"str", v: decodeLiteralString(raw)});
+        i = j; continue;
+      }
+      if (ch === "<" && content.charAt(i + 1) !== "<") {
+        var k = content.indexOf(">", i + 1);
+        if (k < 0) break;
+        var hex = content.slice(i + 1, k);
+        if (/^[0-9A-Fa-f\s]+$/.test(hex)) tokens.push({t:"hex", v: hexToBytes(hex)});
+        i = k + 1; continue;
+      }
+      if (ch === "[") { tokens.push({t:"["}); i++; continue; }
+      if (ch === "]") { tokens.push({t:"]"}); i++; continue; }
+      if (ch === "/") {
+        var nm = /^\/([^\s\[\]<>(){}\/%]+)/.exec(content.slice(i, i + 80));
+        if (nm) { tokens.push({t:"name", v: nm[1]}); i += nm[0].length; continue; }
+        i++; continue;
+      }
+      var wm = /^[^\s\[\]<>(){}\/%]+/.exec(content.slice(i));
+      if (wm) {
+        var w = wm[0];
+        if (/^[+-]?(\d+\.?\d*|\.\d+)$/.test(w)) tokens.push({t:"num", v: parseFloat(w)});
+        else tokens.push({t:"op", v: w});
+        i += w.length; continue;
+      }
+      i++;
+    }
+    return tokens;
+  }
+  function textFromContent(content, nameToCmap, fallbackCmap){
+    var tokens = tokenizeContent(content);
+    var out = "", stack = [], curCmap = null, needSep = false;
+    function appendText(s){
+      if (!s) return;
+      if (needSep && out && !/\s$/.test(out)) out += "\n";
+      needSep = false;
+      out += s;
+    }
+    function lastOf(types){
+      for (var s = stack.length - 1; s >= 0; s--) if (types.indexOf(stack[s].t) >= 0) return stack[s];
+      return null;
+    }
+    for (var ti = 0; ti < tokens.length; ti++) {
+      var tk = tokens[ti];
+      if (tk.t === "[") {
+        var arrItems = []; ti++;
+        while (ti < tokens.length && tokens[ti].t !== "]") { arrItems.push(tokens[ti]); ti++; }
+        stack.push({t:"arr", v: arrItems});
+        continue;
+      }
+      if (tk.t !== "op") { stack.push(tk); continue; }
+      var op = tk.v;
+      if (op === "Tf") {
+        var nameTok = lastOf(["name"]);
+        curCmap = (nameTok && nameToCmap[nameTok.v]) || fallbackCmap || null;
+      } else if (op === "Tj" || op === "'" || op === '"') {
+        var st = lastOf(["str","hex"]);
+        if (op !== "Tj") needSep = true;
+        if (st) appendText(st.t === "hex" ? decodeBytesWithCmap(st.v, curCmap) : decodeStrWithCmap(st.v, curCmap));
+      } else if (op === "TJ") {
+        var arrTok = lastOf(["arr"]);
+        if (arrTok) {
+          for (var e = 0; e < arrTok.v.length; e++) {
+            var el = arrTok.v[e];
+            if (el.t === "str") appendText(decodeStrWithCmap(el.v, curCmap));
+            else if (el.t === "hex") appendText(decodeBytesWithCmap(el.v, curCmap));
+            else if (el.t === "num" && el.v <= -180 && out && !/\s$/.test(out)) out += " ";
+          }
+        }
+      } else if (op === "Td" || op === "TD" || op === "Tm" || op === "T*" || op === "ET") {
+        needSep = true;
+      }
+      stack = [];
+    }
+    return out;
+  }
+  function readPdfInside(buf){
+    // Returns a Promise for {text, pages} using only code in this page.
+    var bytes = new Uint8Array(buf);
+    var whole = bytesToLatin1(bytes);
+    var pageMatches = whole.match(/\/Type\s*\/Page(?![a-zA-Z])/g);
+    var pages = pageMatches ? pageMatches.length : null;
+    if (!pages) {
+      var countM = whole.match(/\/Type\s*\/Pages[\s\S]{0,120}?\/Count\s+(\d+)/);
+      if (countM) pages = parseInt(countM[1], 10) || null;
+    }
+    // Find every stream ... endstream block, its object number, and whether
+    // it is Flate-compressed.
+    var jobs = [], pos = 0;
+    while (true) {
+      var sIdx = whole.indexOf("stream", pos);
+      if (sIdx < 0) break;
+      var eIdx = whole.indexOf("endstream", sIdx + 6);
+      if (eIdx < 0) break;
+      var dictStart = Math.max(whole.lastIndexOf("<<", sIdx), sIdx - 400);
+      var dict = whole.slice(dictStart, sIdx);
+      var dataStart = sIdx + 6;
+      if (whole.charAt(dataStart) === "\r" && whole.charAt(dataStart + 1) === "\n") dataStart += 2;
+      else if (whole.charAt(dataStart) === "\n" || whole.charAt(dataStart) === "\r") dataStart += 1;
+      var dataEnd = eIdx;
+      if (dataEnd > dataStart && (whole.charAt(dataEnd - 1) === "\n" || whole.charAt(dataEnd - 1) === "\r")) dataEnd--;
+      if (dataEnd > dataStart + 1 && whole.charAt(dataEnd - 2) === "\r" && whole.charAt(dataEnd - 1) === "\n") dataEnd--;
+      var objNum = null;
+      var head = whole.slice(Math.max(0, sIdx - 700), sIdx);
+      var objRe = /(\d+)\s+\d+\s+obj/g, om, lastObj = null;
+      while ((om = objRe.exec(head)) !== null) lastObj = om;
+      if (lastObj) objNum = parseInt(lastObj[1], 10);
+      jobs.push({ flate: /FlateDecode/.test(dict), start: dataStart, end: dataEnd, obj: objNum });
+      pos = eIdx + 9;
+    }
+    var streamTexts = [];
+    var chain = Promise.resolve();
+    jobs.forEach(function(job){
+      chain = chain.then(function(){
+        var slice = bytes.subarray(job.start, job.end);
+        if (job.flate) {
+          return inflateBytes(slice).then(function(out){
+            if (out) streamTexts.push({ obj: job.obj, text: bytesToLatin1(out) });
+            else {
+              var raw = bytesToLatin1(slice);
+              if (/BT|Tj|TJ|begincmap/.test(raw)) streamTexts.push({ obj: job.obj, text: raw });
+            }
+          });
+        }
+        streamTexts.push({ obj: job.obj, text: bytesToLatin1(slice) });
+        return null;
+      });
+    });
+    return chain.then(function(){
+      // Pass 2: CMaps -> font objects -> font names.
+      var cmapByObj = {};
+      streamTexts.forEach(function(st){
+        if (st.text.indexOf("begincmap") >= 0 && st.obj != null) cmapByObj[st.obj] = parseCMap(st.text);
+      });
+      var fontObjCmap = {};
+      var oRe = /(\d+)\s+\d+\s+obj([\s\S]*?)endobj/g, oM;
+      while ((oM = oRe.exec(whole)) !== null) {
+        var tM = /\/ToUnicode\s+(\d+)\s+\d+\s+R/.exec(oM[2]);
+        if (tM && cmapByObj[parseInt(tM[1], 10)]) fontObjCmap[parseInt(oM[1], 10)] = cmapByObj[parseInt(tM[1], 10)];
+      }
+      var nameToCmap = {};
+      var fRe = /\/Font\s*<<([\s\S]*?)>>/g, fM;
+      while ((fM = fRe.exec(whole)) !== null) {
+        var eRe = /\/([A-Za-z0-9]+)\s+(\d+)\s+\d+\s+R/g, eM;
+        while ((eM = eRe.exec(fM[1])) !== null) {
+          var fo = parseInt(eM[2], 10);
+          if (fontObjCmap[fo]) nameToCmap[eM[1]] = fontObjCmap[fo];
+        }
+      }
+      var cmapList = Object.keys(cmapByObj).map(function(k){ return cmapByObj[k]; });
+      var fallbackCmap = cmapList.length === 1 ? cmapList[0] : null;
+      // Pass 3: decode the content streams in file order.
+      var texts = [];
+      streamTexts.forEach(function(st){
+        if (st.text.indexOf("begincmap") >= 0) return;
+        if (/BT|Tj|TJ|Tf/.test(st.text)) texts.push(textFromContent(st.text, nameToCmap, fallbackCmap));
+      });
+      return { text: texts.join(" \n "), pages: pages };
+    }).catch(function(){ return { text: "", pages: pages }; });
+  }
+
+  var REGIONS = ["Hazara","Kohat","Malakand","Mardan","Peshawar"];
+  var items = [];        // scanned PDF records
+  var otherCount = 0;    // non-PDF files seen
+  var seenKeys = {};     // de-dupe across folder scans: name|size
+
+  var folderInput = document.getElementById("folderInput");
+  var filesInput  = document.getElementById("filesInput");
+  var progressWrap = document.getElementById("progressWrap");
+  var barFill = document.getElementById("barFill");
+  var progressText = document.getElementById("progressText");
+  var resultsEl = document.getElementById("results");
+  var summaryEl = document.getElementById("summary");
+  var sendBox = document.getElementById("sendBox");
+  var listText = document.getElementById("listText");
+  var copyMsg = document.getElementById("copyMsg");
+
+  document.getElementById("moreBtn").addEventListener("click", function(){
+    document.getElementById("dropZone").scrollIntoView({behavior:"smooth", block:"center"});
+    setTimeout(function(){ folderInput.click(); }, 450);
+  });
+  document.getElementById("clearBtn").addEventListener("click", function(){
+    items = []; otherCount = 0; seenKeys = {};
+    render(); copyMsg.textContent = "";
+    window.scrollTo({top:0, behavior:"smooth"});
+  });
+
+  folderInput.addEventListener("change", function(){ handleFiles(folderInput.files); folderInput.value=""; });
+  filesInput.addEventListener("change", function(){ handleFiles(filesInput.files); filesInput.value=""; });
+
+  var dropZone = document.getElementById("dropZone");
+  dropZone.addEventListener("dragover", function(e){ e.preventDefault(); });
+  dropZone.addEventListener("drop", function(e){
+    e.preventDefault();
+    if (e.dataTransfer && e.dataTransfer.files) handleFiles(e.dataTransfer.files);
+  });
+
+  // ---------- helpers ----------
+  function esc(s){
+    return String(s == null ? "" : s)
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;");
+  }
+  function pad(n){ return (n<10?"0":"")+n; }
+  function sizeText(bytes){
+    if (bytes >= 1048576) return (bytes/1048576).toFixed(1)+" MB";
+    if (bytes >= 1024) return Math.round(bytes/1024)+" KB";
+    return bytes+" B";
+  }
+  // Full folder location of a file, from the path the phone gives with a
+  // folder pick — e.g. "Downloads / Results / Folder 1". Files picked one by
+  // one carry no path on any phone, so they are labelled honestly.
+  function folderPathOf(file){
+    var p = file.webkitRelativePath || "";
+    if (p) {
+      var parts = p.split("/");
+      parts.pop(); // drop the file name itself
+      return parts.length ? parts.join(" / ") : "—";
+    }
+    return "Picked as separate files (no folder path)";
+  }
+  function folderNameOf(path){
+    var parts = String(path).split(" / ");
+    return parts[parts.length - 1] || "—";
+  }
+  var ORD = {"1st":1,"2nd":2,"3rd":3,"4th":4,"5th":5,"6th":6,"7th":7,"8th":8,
+             "first":1,"second":2,"third":3,"fourth":4,"fifth":5,"sixth":6,"seventh":7,"eighth":8};
+  function findSemester(text){
+    var t = " " + text.toLowerCase().replace(/\s+/g," ") + " ";
+    var m = t.match(/\b(1st|2nd|3rd|4th|5th|6th|7th|8th|first|second|third|fourth|fifth|sixth|seventh|eighth)\s*(semester|sem)\b/);
+    if (m) return ORD[m[1]];
+    m = t.match(/\bsemester\s*[-–]?\s*(1|2|3|4|5|6|7|8|i{1,3}v?|vi{0,3})\b/);
+    if (m) {
+      var v = m[1];
+      if (/^\d$/.test(v)) return parseInt(v,10);
+      var roman = {"i":1,"ii":2,"iii":3,"iv":4,"v":5,"vi":6,"vii":7,"viii":8};
+      return roman[v] || null;
+    }
+    m = t.match(/\bsem\s*[-_. ]?\s*([1-8])\b/);
+    if (m) return parseInt(m[1],10);
+    m = t.match(/\bbsn\s*[- ]?([1-8])\b/);
+    if (m) return parseInt(m[1],10);
+    return null;
+  }
+  function semLabel(n){ return n ? (n + (n===1?"st":n===2?"nd":n===3?"rd":"th")) : "— CHECK"; }
+  function findRegion(text){
+    // 1) Signature rule: look near "Regional Director"
+    var low = text.toLowerCase();
+    var idx = low.lastIndexOf("regional director");
+    if (idx >= 0) {
+      var near = text.slice(Math.max(0, idx-160), idx+220);
+      for (var i=0;i<REGIONS.length;i++){
+        if (near.toLowerCase().indexOf(REGIONS[i].toLowerCase()) >= 0) return {region:REGIONS[i], how:"signature"};
+      }
+      if (/swat/i.test(near)) return {region:"Malakand (Swat)", how:"signature"};
+    }
+    // 2) Whole text
+    for (var j=0;j<REGIONS.length;j++){
+      if (low.indexOf(REGIONS[j].toLowerCase()) >= 0) return {region:REGIONS[j], how:"content"};
+    }
+    if (/\bswat\b/i.test(text)) return {region:"Malakand (Swat)", how:"content"};
+    return null;
+  }
+  function findSession(text){
+    var m = text.match(/\b(Spring|Fall|Autumn|Summer|Winter)\s*[- ]?\s*(20\d{2})\b/i);
+    if (m) return {name: m[1].charAt(0).toUpperCase()+m[1].slice(1).toLowerCase(), year: parseInt(m[2],10)};
+    m = text.match(/\b(20\d{2})\s*[- ]\s*(20\d{2})\b/);
+    if (m) return {name:"Session", year: parseInt(m[2],10)};
+    return null;
+  }
+  function findExamType(text, sessionName){
+    if (/make\s?-?\s?up|makeup/i.test(text)) return "Makeup";
+    if (/supplementary/i.test(text)) return "Supplementary";
+    if (sessionName === "Summer") return "Summer";
+    if (sessionName === "Winter") return "Winter";
+    return "Regular";
+  }
+  function findDates(text){
+    var out = [];
+    var re = /\b(\d{1,2})[.\/-](\d{1,2})[.\/-](20\d{2})\b/g, m;
+    while ((m = re.exec(text)) !== null) {
+      var d = parseInt(m[1],10), mo = parseInt(m[2],10), y = parseInt(m[3],10);
+      if (d>=1 && d<=31 && mo>=1 && mo<=12) out.push({str: pad(d)+"-"+pad(mo)+"-"+y, year:y, sortKey: y*10000+mo*100+d});
+    }
+    var re2 = /\b(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s*,?\s+(20\d{2})\b/gi;
+    var months = {january:1,february:2,march:3,april:4,may:5,june:6,july:7,august:8,september:9,october:10,november:11,december:12};
+    while ((m = re2.exec(text)) !== null) {
+      var d2 = parseInt(m[1],10), mo2 = months[m[2].toLowerCase()], y2 = parseInt(m[3],10);
+      out.push({str: pad(d2)+"-"+pad(mo2)+"-"+y2, year:y2, sortKey: y2*10000+mo2*100+d2});
+    }
+    return out;
+  }
+  function findProgram(text){
+    var t = " " + text.replace(/\s+/g," ") + " ";
+    if (/post[\s\-]?rn/i.test(t)) return "Post-RN BSN";
+    if (/generic\s*bsn|bsn\s*\(?\s*generic/i.test(t)) return "BSN (Generic)";
+    if (/\bbsn\b/i.test(t)) return "BSN";
+    if (/\blhv\b/i.test(t)) return "LHV";
+    if (/\bcna\b/i.test(t)) return "CNA";
+    if (/midwifery/i.test(t)) return "Midwifery";
+    if (/nursing/i.test(t)) return "Nursing";
+    return null;
+  }
+  function findUniversity(text){
+    if (/khyber\s+medical\s+university/i.test(text)) return "Khyber Medical University (KMU)";
+    if (/\bKMU\b/.test(text)) return "KMU";
+    return null;
+  }
+  function findNotifNo(text){
+    var t = text.replace(/\s+/g," ");
+    var pats = [
+      /notif(?:ication)?\.?\s*(?:no\.?|number|#)\s*[:\-]?\s*([A-Za-z0-9][A-Za-z0-9\/\-]{2,30})/i,
+      /result\s*(?:no\.?|notification)\s*[:\-]?\s*([A-Za-z0-9][A-Za-z0-9\/\-]{2,30})/i,
+      /\bno\.?\s*[:\-]?\s*(KMU[\/ \-][A-Za-z0-9\/\-]{2,28})/i,
+      /ref(?:erence)?\.?\s*(?:no\.?|#)\s*[:\-]?\s*([A-Za-z0-9][A-Za-z0-9\/\-]{2,30})/i
+    ];
+    for (var i=0;i<pats.length;i++){
+      var m = t.match(pats[i]);
+      if (m) {
+        var v = m[1].replace(/[\.,;]+$/,"");
+        if (/\d/.test(v)) return v;
+      }
+    }
+    return null;
+  }
+  function findCounts(text){
+    var t = text.replace(/\s+/g," ");
+    var out = {appeared:null, passed:null};
+    var m = t.match(/appeared\s*(?:students)?\s*[:\-=]?\s*(\d{1,6})\b/i) || t.match(/(\d{1,6})\s*students?\s*(?:had\s*)?appeared/i) || t.match(/total\s*(?:students)?\s*appeared\s*[:\-=]?\s*(\d{1,6})\b/i);
+    if (m) out.appeared = m[1];
+    m = t.match(/passed\s*(?:students)?\s*[:\-=]?\s*(\d{1,6})\b/i) || t.match(/(\d{1,6})\s*students?\s*(?:have\s*)?passed/i) || t.match(/total\s*(?:students)?\s*passed\s*[:\-=]?\s*(\d{1,6})\b/i);
+    if (m) out.passed = m[1];
+    return out;
+  }
+  function normDateStr(s){
+    var m = String(s).match(/(\d{1,2})[.\/-](\d{1,2})[.\/-](20\d{2})/);
+    if (!m) return s;
+    return pad(parseInt(m[1],10)) + "-" + pad(parseInt(m[2],10)) + "-" + m[3];
+  }
+  function findExamDates(text){
+    var t = text.replace(/\s+/g," ");
+    var range = t.match(/(\d{1,2}[.\/-]\d{1,2}[.\/-]20\d{2})\s*(?:to|till|–|—|-)\s*(\d{1,2}[.\/-]\d{1,2}[.\/-]20\d{2})/);
+    if (range) return {start: normDateStr(range[1]), end: normDateStr(range[2])};
+    var held = t.match(/(?:examination|exam|papers?)\s*(?:was\s*|were\s*)?(?:held|conducted|commenced|started)\s*(?:on|from)?\s*[:\-]?\s*(\d{1,2}[.\/-]\d{1,2}[.\/-]20\d{2})/i);
+    if (held) return {start: normDateStr(held[1]), end: null};
+    held = t.match(/(?:commencing|starting)\s*(?:on|from)?\s*[:\-]?\s*(\d{1,2}[.\/-]\d{1,2}[.\/-]20\d{2})/i);
+    if (held) return {start: normDateStr(held[1]), end: null};
+    return {start:null, end:null};
+  }
+  function findBatchCode(name){
+    var m = name.match(/\bB\s?(\d{2})\s?[-–]\s?(\d{2})\b/i);
+    if (m) return {label:"B"+m[1]+"-"+m[2], startYear: 2000 + parseInt(m[1],10), how:"Your file name"};
+    m = name.match(/\bBatch\s*(20\d{2})\b/i);
+    if (m) return {label:"Batch "+m[1], startYear: parseInt(m[1],10), how:"Your file name"};
+    return null;
+  }
+  function calcBatch(sem, examYear){
+    if (!sem || !examYear) return null;
+    var start = examYear - Math.ceil(sem/2);
+    var endShort = (start + 4) % 100;
+    return { label:"B"+(start%100)+"-"+(endShort<10?"0":"")+endShort, startYear:start, how:"Calculated — CHECK" };
+  }
+
+  function parseFromText(text, fileName){
+    var rec = { readOk:false };
+    var sem = findSemester(text);
+    if (sem) rec.semester = sem;
+    var reg = findRegion(text);
+    if (reg) { rec.region = reg.region; rec.regionHow = reg.how; }
+    var ses = findSession(text);
+    if (ses) { rec.session = ses.name + " " + ses.year; rec.sessionYear = ses.year; rec.sessionName = ses.name; }
+    rec.examType = findExamType(text, rec.sessionName || "");
+    var dates = findDates(text);
+    if (dates.length) {
+      // Announcement date is normally the latest clear date in the PDF.
+      dates.sort(function(a,b){ return b.sortKey - a.sortKey; });
+      rec.date = dates[0].str; rec.dateYear = dates[0].year; rec.dateSort = dates[0].sortKey;
+    }
+    rec.program = findProgram(text);
+    rec.university = findUniversity(text);
+    rec.notifNo = findNotifNo(text);
+    var counts = findCounts(text);
+    rec.appeared = counts.appeared;
+    rec.passed = counts.passed;
+    var ex = findExamDates(text);
+    rec.examStart = ex.start;
+    rec.examEnd = ex.end;
+    return rec;
+  }
+
+  function extractPdfText(file){
+    // Deep scan: reads the text streams of EVERY page, using the built-in
+    // reader above — no library, no CDN, no internet needed.
+    return file.arrayBuffer().then(function(buf){
+      return readPdfInside(buf);
+    }).catch(function(){ return {text:"", pages:null}; });
+  }
+
+  function buildRecord(file, extracted){
+    var name = file.name;
+    var pdfText = (extracted && extracted.text) || "";
+    var pages = extracted ? extracted.pages : null;
+    var fromContent = parseFromText(pdfText || "", name);
+    var fromName = parseFromText(name.replace(/[_\-]+/g," "), name);
+    fromName.regionHow = fromName.region ? "file name" : null;
+
+    var path = folderPathOf(file);
+    var rec = {
+      fileName: name,
+      fileKey: name.toLowerCase() + "|" + file.size,
+      folder: folderNameOf(path),
+      path: path,
+      size: sizeText(file.size),
+      pages: pages,
+      readOk: !!(pdfText && pdfText.trim().length > 40),
+      semester: fromContent.semester || fromName.semester || null,
+      region: (fromContent.region || fromName.region || null),
+      regionHow: fromContent.region ? fromContent.regionHow : (fromName.region ? "file name" : null),
+      session: fromContent.session || fromName.session || "—",
+      sessionYear: fromContent.sessionYear || fromName.sessionYear || null,
+      examType: (fromContent.examType && fromContent.examType !== "Regular") ? fromContent.examType
+                : (fromName.examType || fromContent.examType || "Regular"),
+      date: fromContent.date || fromName.date || "—",
+      dateYear: fromContent.dateYear || fromName.dateYear || null,
+      dateSort: fromContent.dateSort || fromName.dateSort || 0,
+      program: fromContent.program || fromName.program || null,
+      university: fromContent.university || null,
+      notifNo: fromContent.notifNo || null,
+      appeared: fromContent.appeared || null,
+      passed: fromContent.passed || null,
+      examStart: fromContent.examStart || null,
+      examEnd: fromContent.examEnd || null,
+      dupe: "",
+      dupeKind: ""
+    };
+    rec.year = rec.dateYear || rec.sessionYear || null;
+    rec.examDates = rec.examStart ? (rec.examStart + (rec.examEnd ? " to " + rec.examEnd : "")) : null;
+
+    var b = findBatchCode(name);
+    if (!b) b = calcBatch(rec.semester, rec.sessionYear || rec.dateYear);
+    rec.batch = b ? b.label : "—";
+    rec.batchHow = b ? b.how : "No code — CHECK";
+
+    var missing = [];
+    if (!rec.year) missing.push("year");
+    if (!rec.region) missing.push("region");
+    if (!rec.semester) missing.push("semester");
+    if (!rec.program) missing.push("program");
+    rec.check = missing.length ? ("CHECK: " + missing.join(", ")) : "";
+    if (!rec.region) rec.region = "— CHECK";
+    return rec;
+  }
+
+  function cloneAsFileDupe(orig, file){
+    var c = {};
+    for (var k in orig) c[k] = orig[k];
+    c.path = folderPathOf(file);
+    c.folder = folderNameOf(c.path);
+    c.dupeKind = "Same file";
+    c.dupe = "Same file as “" + orig.fileName + "” — same name and same size (" + orig.size + "). Its location: " + orig.path;
+    return c;
+  }
+
+  // ---------- duplicate detection ----------
+  function contentKey(it){
+    if (!it.semester || !it.sessionYear || !it.region || it.region.indexOf("CHECK") >= 0) return null;
+    return (it.region + "|" + it.semester + "|" + it.session + "|" + it.examType).toLowerCase();
+  }
+  function recomputeDupes(){
+    var byContent = {};
+    items.forEach(function(it){
+      if (it.dupeKind === "Same file") return; // already flagged, keep it
+      it.dupe = ""; it.dupeKind = "";
+      var key = contentKey(it);
+      if (!key) return;
+      if (byContent[key]) {
+        var o = byContent[key];
+        it.dupeKind = "Same result";
+        it.dupe = "Same result as “" + o.fileName + "” — same Region (" + o.region + "), Semester (" + semLabel(o.semester) + "), Session (" + o.session + ") and Type (" + o.examType + "), but a different file name. Its location: " + o.path;
+      } else {
+        byContent[key] = it;
+      }
+    });
+  }
+  function dupItems(){ return items.filter(function(i){ return !!i.dupe; }); }
+  function mainItems(sorted){ return sorted.filter(function(i){ return !i.dupe; }); }
+
+  // ---------- scanning ----------
+  var scanning = false;
+  function findByKey(key){
+    for (var i=0;i<items.length;i++) if (items[i].fileKey === key) return items[i];
+    return null;
+  }
+  function setProgress(pct, html){
+    barFill.style.width = pct + "%";
+    progressText.innerHTML = html;
+  }
+  function handleFiles(fileList){
+    if (scanning || !fileList || !fileList.length) return;
+    var all = Array.prototype.slice.call(fileList);
+    var pdfs = [], fileDupes = [], others = 0;
+    all.forEach(function(f){
+      var isPdf = /\.pdf$/i.test(f.name) || f.type === "application/pdf";
+      if (!isPdf) { others++; return; }
+      var key = f.name.toLowerCase() + "|" + f.size;
+      if (seenKeys[key]) { fileDupes.push(f); return; }
+      seenKeys[key] = true;
+      pdfs.push(f);
+    });
+    otherCount += others;
+    // Same-file copies: keep them in the list, flagged — never dropped silently.
+    var cloned = 0;
+    fileDupes.forEach(function(f){
+      var orig = findByKey(f.name.toLowerCase() + "|" + f.size);
+      if (orig) { items.push(cloneAsFileDupe(orig, f)); cloned++; }
+      else { pdfs.push(f); }
+    });
+    if (!pdfs.length) {
+      progressWrap.classList.add("on");
+      setProgress(100, "No new PDFs to read in that selection." + (cloned ? " " + cloned + " same-file cop" + (cloned===1?"y was":"ies were") + " added to the list and flagged DUPLICATE?." : "") + (others ? " " + others + " other file(s) were counted as non-PDF." : ""));
+      render();
+      return;
+    }
+    scanning = true;
+    document.body.classList.add("scanning");
+    progressWrap.classList.add("on");
+    function step(i){
+      if (i >= pdfs.length) {
+        scanning = false;
+        document.body.classList.remove("scanning");
+        var dc = dupItems().length;
+        setProgress(100, '<span class="pct">100%</span> Done — ' + pdfs.length + " new PDF(s) deep-scanned (every page)." + (cloned ? " " + cloned + " same-file copy(ies) flagged." : "") + (others ? " " + others + " other file(s) counted." : "") + (dc ? " " + dc + " possible duplicate(s) found — see the red box below." : " No duplicates found."));
+        render();
+        document.getElementById("summary").scrollIntoView({behavior: reducedMotion ? "auto" : "smooth", block:"start"});
+        return;
+      }
+      var f = pdfs[i];
+      var pct = Math.round((i / pdfs.length) * 100);
+      setProgress(pct, '<span class="pct">' + pct + '%</span> Deep-scanning ' + (i+1) + " of " + pdfs.length + " (every page): " + esc(f.name));
+      extractPdfText(f).then(function(ex){
+        items.push(buildRecord(f, ex));
+        step(i+1);
+      });
+    }
+    step(0);
+  }
+
+  // ---------- sorting & rendering ----------
+  function regionRank(r){
+    for (var i=0;i<REGIONS.length;i++) if (r.indexOf(REGIONS[i]) === 0) return i;
+    return 99;
+  }
+  function sortedItems(){
+    return items.slice().sort(function(a,b){
+      var ya = a.year || 9999, yb = b.year || 9999;
+      if (ya !== yb) return ya - yb;
+      var ra = regionRank(a.region), rb = regionRank(b.region);
+      if (ra !== rb) return ra - rb;
+      var sa = a.semester || 99, sb = b.semester || 99;
+      if (sa !== sb) return sa - sb;
+      if (a.session !== b.session) return a.session < b.session ? -1 : 1;
+      return (a.dateSort||0) - (b.dateSort||0);
+    });
+  }
+  function countsBy(keyFn){
+    var map = {};
+    items.forEach(function(it){ var k = keyFn(it); map[k] = (map[k]||0)+1; });
+    return map;
+  }
+  function fieldOrCheck(v){ return v ? esc(v) : '<span class="miss">— CHECK</span>'; }
+  function setStat(id, val){
+    var el = document.getElementById(id);
+    var from = parseInt(el.getAttribute("data-v") || "0", 10);
+    el.setAttribute("data-v", val);
+    if (reducedMotion || from === val || !isFinite(from)) { el.textContent = val; return; }
+    var t0 = null, dur = 600;
+    function frame(ts){
+      if (!t0) t0 = ts;
+      var p = Math.min(1, (ts - t0) / dur);
+      el.textContent = Math.round(from + (val - from) * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+  function chipsHtml(map, keys, warnFn){
+    return keys.map(function(k, i){
+      return '<span class="chip' + (warnFn && warnFn(k) ? " warn" : "") + '" style="--d:' + Math.min(i*50, 400) + 'ms">' + esc(k) + ": " + map[k] + "</span>";
+    }).join("");
+  }
+  function render(){
+    recomputeDupes();
+    var has = items.length > 0;
+    summaryEl.classList.toggle("on", has || otherCount > 0);
+    sendBox.classList.toggle("on", has);
+
+    var dups = dupItems();
+    setStat("statTotal", items.length);
+    setStat("statRead", items.filter(function(i){return i.readOk;}).length);
+    setStat("statNameOnly", items.filter(function(i){return !i.readOk;}).length);
+    setStat("statCheck", items.filter(function(i){return i.check;}).length);
+    setStat("statDupe", dups.length);
+    setStat("statOther", otherCount);
+
+    var dupBox = document.getElementById("dupBox");
+    dupBox.classList.toggle("on", dups.length > 0);
+    document.getElementById("dupList").innerHTML = dups.map(function(it){
+      return '<li><b>' + esc(it.fileName) + '</b><br><span class="dloc">' + esc(it.path) + '</span><br>' + esc(it.dupe) + '</li>';
+    }).join("");
+
+    var cy = countsBy(function(i){ return i.year ? String(i.year) : "No date"; });
+    document.getElementById("chipsYear").innerHTML =
+      chipsHtml(cy, Object.keys(cy).sort()) || '<span class="chip warn">None yet</span>';
+    var cr = countsBy(function(i){ return i.region; });
+    document.getElementById("chipsRegion").innerHTML =
+      chipsHtml(cr, Object.keys(cr).sort(function(a,b){ return regionRank(a)-regionRank(b); }), function(k){ return k.indexOf("CHECK")>=0; })
+      || '<span class="chip warn">None yet</span>';
+    var ct = countsBy(function(i){ return i.examType; });
+    document.getElementById("chipsType").innerHTML =
+      chipsHtml(ct, Object.keys(ct).sort()) || '<span class="chip warn">None yet</span>';
+
+    if (!has) { resultsEl.innerHTML = ""; listText.value = ""; document.getElementById("reportView").classList.remove("on"); return; }
+
+    var sorted = sortedItems();
+    var html = "";
+    var curYear = null, curRegion = null, animIdx = 0;
+    sorted.forEach(function(it){
+      var yKey = it.year ? String(it.year) : "No date";
+      if (yKey !== curYear) {
+        curYear = yKey; curRegion = null;
+        var yc = sorted.filter(function(x){ return (x.year?String(x.year):"No date") === yKey; }).length;
+        html += '<div class="group"><div class="group-head"><span>' + esc(yKey) + '</span><span class="count">' + yc + ' result' + (yc===1?"":"s") + '</span></div>';
+      }
+      if (it.region !== curRegion) {
+        curRegion = it.region;
+        var rc = sorted.filter(function(x){ return (x.year?String(x.year):"No date") === curYear && x.region === curRegion; }).length;
+        html += '<div class="region-head"><span>' + esc(curRegion) + " — " + esc(curYear) + '</span><span>' + rc + '</span></div>';
+      }
+      var tags = "";
+      if (it.dupe) tags += ' <span class="tag tag-dupe">DUPLICATE? — ' + esc(it.dupeKind) + '</span>';
+      tags += it.check
+        ? ' <span class="tag tag-check">' + esc(it.check) + '</span>'
+        : (it.readOk ? ' <span class="tag tag-ok">Read from PDF</span>' : ' <span class="tag tag-check">From file name only</span>');
+      var delay = Math.min(animIdx * 45, 540); animIdx++;
+      html += '<div class="item' + (it.dupe ? " is-dupe" : "") + '" style="--d:' + delay + 'ms">'
+        + '<div class="fname">' + esc(it.fileName) + tags + '</div>'
+        + '<div class="loc">Location: <b>' + esc(it.path) + '</b></div>'
+        + '<div class="meta">'
+        + '<span>Program: <b>' + (it.program ? esc(it.program) : "— CHECK") + '</b></span>'
+        + '<span>Sem: <b>' + esc(semLabel(it.semester)) + '</b></span>'
+        + '<span>Session: <b>' + esc(it.session) + '</b></span>'
+        + '<span>Type: <b>' + esc(it.examType) + '</b></span>'
+        + '<span>Result date: <b>' + esc(it.date) + '</b></span>'
+        + '<span>Batch: <b>' + esc(it.batch) + '</b> (' + esc(it.batchHow) + ')</span>'
+        + '<span>Region from: <b>' + esc(it.regionHow || "—") + '</b></span>'
+        + '</div>'
+        + '<div class="meta2">'
+        + '<span>Pages: <b>' + (it.pages ? it.pages : "—") + '</b></span>'
+        + '<span>Size: <b>' + esc(it.size) + '</b></span>'
+        + '<span>Exam dates: ' + fieldOrCheck(it.examDates) + '</span>'
+        + '<span>Notification / Result No: ' + fieldOrCheck(it.notifNo) + '</span>'
+        + '<span>Appeared: ' + fieldOrCheck(it.appeared) + '</span>'
+        + '<span>Passed: ' + fieldOrCheck(it.passed) + '</span>'
+        + '<span>University: ' + fieldOrCheck(it.university) + '</span>'
+        + '<span>Read from: <b>' + (it.readOk ? "Inside the PDF (every page)" : "File name only — no readable text inside") + '</b></span>'
+        + '</div>'
+        + (it.dupe ? '<div class="dupnote">DUPLICATE? ' + esc(it.dupe) + '</div>' : '')
+        + '</div>';
+    });
+    html += "</div>";
+    resultsEl.innerHTML = html;
+
+    listText.value = buildTextList(sorted);
+  }
+
+  function detailLine(it){
+    return "      Program: " + (it.program || "CHECK")
+      + " | Pages: " + (it.pages || "—")
+      + " | Size: " + it.size
+      + " | Exam dates: " + (it.examDates || "CHECK")
+      + " | Notification/Result No: " + (it.notifNo || "CHECK")
+      + " | Appeared: " + (it.appeared || "CHECK")
+      + " | Passed: " + (it.passed || "CHECK")
+      + " | University: " + (it.university || "CHECK")
+      + " | Read from: " + (it.readOk ? "inside the PDF (every page)" : "file name only — no readable text inside");
+  }
+  function buildTextList(sorted){
+    var main = mainItems(sorted);
+    var dups = sorted.filter(function(i){ return !!i.dupe; });
+    var lines = [];
+    lines.push("KMU RESULTS — DEEP SCAN REPORT");
+    lines.push("Order: Year, then Region, then Semester.");
+    lines.push("PDFs found: " + sorted.length + " (main list: " + main.length + ", possible duplicates: " + dups.length + "). Other (non-PDF) files seen: " + otherCount + ".");
+    lines.push("Every page of each PDF was read on the phone. Batch marked CHECK is calculated, not written in the result. A field marked CHECK could not be found.");
+    lines.push("");
+    lines.push("===== MAIN LIST (each result counted once) =====");
+    var curYear = null, curRegion = null, n = 0;
+    main.forEach(function(it){
+      var yKey = it.year ? String(it.year) : "No date";
+      if (yKey !== curYear) { curYear = yKey; curRegion = null; lines.push(""); lines.push("=== " + yKey + " ==="); }
+      if (it.region !== curRegion) { curRegion = it.region; lines.push("-- " + curRegion + " — " + curYear + " --"); }
+      n++;
+      lines.push(
+        n + ". [" + yKey + " | " + it.region + "] Sem " + semLabel(it.semester)
+        + " | " + it.session + " | " + it.examType + " | Result date: " + it.date
+        + " | Batch: " + it.batch + " (" + it.batchHow + ")"
+        + " | Location: " + it.path
+        + " | File: " + it.fileName
+        + (it.check ? " | " + it.check : "")
+      );
+      lines.push(detailLine(it));
+    });
+    lines.push("");
+    lines.push("===== DUPLICATES (not counted in the main list) =====");
+    if (!dups.length) {
+      lines.push("None found.");
+    } else {
+      dups.forEach(function(it, i){
+        lines.push((i+1) + ". " + it.fileName);
+        lines.push("   Location: " + it.path);
+        lines.push("   " + it.dupe);
+      });
+    }
+    return lines.join("\n");
+  }
+
+  function csvCell(v){ return '"' + String(v == null ? "" : v).replace(/"/g,'""') + '"'; }
+  function buildCsv(){
+    var rows = [["No","Year","Region","Program","Semester","Session","Type","Result Date","Exam Dates","Notification / Result No","Appeared","Passed","University","Pages","Size","Batch","Batch From","Folder Location","Folder","File Name","Read From","Duplicate?","Duplicate Detail","Note"]];
+    sortedItems().forEach(function(it, i){
+      rows.push([i+1, it.year || "No date", it.region, it.program || "CHECK", semLabel(it.semester), it.session, it.examType, it.date,
+                 it.examDates || "CHECK", it.notifNo || "CHECK", it.appeared || "CHECK", it.passed || "CHECK", it.university || "CHECK",
+                 it.pages || "", it.size, it.batch, it.batchHow, it.path, it.folder, it.fileName,
+                 it.readOk ? "Inside PDF (every page)" : "File name only", it.dupe ? "DUPLICATE?" : "", it.dupe || "", it.check || ""]);
+    });
+    return rows.map(function(r){ return r.map(csvCell).join(","); }).join("\n");
+  }
+
+  // ---------- downloads + printable report ----------
+  function tryDownload(name, content, type){
+    try {
+      var blob = new Blob([content], {type: type});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = name; a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function(){ try { document.body.removeChild(a); } catch(e){} }, 600);
+      // Keep the link alive for a while — phone browsers can be slow to start.
+      setTimeout(function(){ try { URL.revokeObjectURL(url); } catch(e){} }, 30000);
+      return true;
+    } catch(e) { return false; }
+  }
+  function tryDownloadBlob(name, blob){
+    try {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = name; a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function(){ try { document.body.removeChild(a); } catch(e){} }, 600);
+      setTimeout(function(){ try { URL.revokeObjectURL(url); } catch(e){} }, 30000);
+      return true;
+    } catch(e) { return false; }
+  }
+  // ---------- Direct PDF report, made on the phone (no other app) ----------
+  // A small, ordinary-JavaScript PDF writer: it lays the text report out on
+  // A4 pages and builds a real .pdf file, byte by byte, right in the browser.
+  function pdfClean(s){
+    return String(s == null ? "" : s).replace(/[^\x20-\x7E]/g, "-");
+  }
+  function pdfEscape(s){
+    return s.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+  }
+  function wrapLine(line, width){
+    var out = [];
+    var rest = line;
+    while (rest.length > width) {
+      var cut = rest.lastIndexOf(" ", width);
+      if (cut < 20) cut = width;
+      out.push(rest.slice(0, cut));
+      rest = rest.slice(cut).replace(/^\s+/, "");
+    }
+    out.push(rest);
+    return out;
+  }
+  function buildPdfBlob(){
+    var rawLines = listText.value.split("\n");
+    var lines = [];
+    rawLines.forEach(function(l){
+      var wrapped = wrapLine(pdfClean(l), 96);
+      for (var i = 0; i < wrapped.length; i++) lines.push(wrapped[i]);
+    });
+    if (!lines.length) lines = ["KMU Results - Deep Scan Report", "No results scanned yet."];
+    var perPage = 50, pages = [];
+    for (var p = 0; p < lines.length; p += perPage) pages.push(lines.slice(p, p + perPage));
+    if (!pages.length) pages = [lines];
+    var objects = [];
+    // 1 = Catalog, 2 = Pages, 3 = Font; then a Page + Content pair per page.
+    var kids = [];
+    for (var k = 0; k < pages.length; k++) kids.push((4 + k * 2) + " 0 R");
+    objects[1] = "<< /Type /Catalog /Pages 2 0 R >>";
+    objects[2] = "<< /Type /Pages /Kids [" + kids.join(" ") + "] /Count " + pages.length + " >>";
+    objects[3] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>";
+    pages.forEach(function(pageLines, idx){
+      var pageObj = 4 + idx * 2, contentObj = pageObj + 1;
+      objects[pageObj] = "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents " + contentObj + " 0 R >>";
+      var cs = "BT /F1 9 Tf 13.5 TL 48 792 Td";
+      pageLines.forEach(function(ln, li){
+        if (li > 0) cs += " T*";
+        if (ln) cs += " (" + pdfEscape(ln) + ") Tj";
+      });
+      cs += " ET";
+      objects[contentObj] = "<< /Length " + cs.length + " >>\nstream\n" + cs + "\nendstream";
+    });
+    var pdf = "%PDF-1.4\n", offsets = [0], total = objects.length - 1, i2;
+    for (i2 = 1; i2 <= total; i2++) {
+      offsets[i2] = pdf.length;
+      pdf += i2 + " 0 obj\n" + objects[i2] + "\nendobj\n";
+    }
+    var xrefAt = pdf.length;
+    pdf += "xref\n0 " + (total + 1) + "\n";
+    pdf += "0000000000 65535 f \n";
+    for (i2 = 1; i2 <= total; i2++) {
+      var off = String(offsets[i2]);
+      while (off.length < 10) off = "0" + off;
+      pdf += off + " 00000 n \n";
+    }
+    pdf += "trailer\n<< /Size " + (total + 1) + " /Root 1 0 R >>\nstartxref\n" + xrefAt + "\n%%EOF";
+    return new Blob([pdf], {type: "application/pdf"});
+  }
+  // ---------- Direct Word (.doc) report, made on the phone ----------
+  function buildWordDoc(){
+    return '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">'
+      + '<head><meta charset="utf-8"><title>KMU Results - Deep Scan Report</title>'
+      + '<style>body{font-family:Arial,Helvetica,sans-serif;color:#1a231e;line-height:1.5}'
+      + "h2{margin:0 0 8px}h3{margin:22px 0 8px}table{border-collapse:collapse;width:100%;font-size:11px}"
+      + "th,td{border:1px solid #999;padding:5px 7px;text-align:left;vertical-align:top}th{background:#eef2ee}"
+      + "li{margin-bottom:8px}</style></head><body>"
+      + reportBodyHtml()
+      + "</body></html>";
+  }
+  function dlMsg(ok, fileLabel){
+    if (ok) {
+      copyMsg.textContent = "Download started: " + fileLabel + ". Look in your phone's Downloads folder.";
+      copyMsg.className = "msg good";
+    } else {
+      copyMsg.textContent = "The download did not start on this phone. The full report is opened below instead — or use the Copy button. Nothing is lost.";
+      copyMsg.className = "msg";
+      openReport();
+    }
+  }
+
+  function reportBodyHtml(){
+    var sorted = sortedItems();
+    var main = mainItems(sorted);
+    var dups = sorted.filter(function(i){ return !!i.dupe; });
+    var readN = items.filter(function(i){return i.readOk;}).length;
+    var chkN = items.filter(function(i){return i.check;}).length;
+    var h = "";
+    h += "<h2>KMU Results — Deep Scan Report</h2>";
+    h += "<p>Order: Year, then Region, then Semester. Every page of each PDF was read on the phone.</p>";
+    h += "<p><b>PDFs found:</b> " + sorted.length + " &nbsp;|&nbsp; <b>Main list:</b> " + main.length
+       + " &nbsp;|&nbsp; <b>Possible duplicates:</b> " + dups.length
+       + " &nbsp;|&nbsp; <b>Read from inside the PDF:</b> " + readN
+       + " &nbsp;|&nbsp; <b>File name only:</b> " + (items.length - readN)
+       + " &nbsp;|&nbsp; <b>Need a check:</b> " + chkN
+       + " &nbsp;|&nbsp; <b>Other (non-PDF) files:</b> " + otherCount + "</p>";
+    h += "<h3>Main list — each result counted once</h3>";
+    h += '<div class="report-scroll"><table><thead><tr><th>No</th><th>Year</th><th>Region</th><th>Program</th><th>Sem</th><th>Session</th><th>Type</th><th>Result date</th><th>Exam dates</th><th>Notif. No</th><th>Appeared</th><th>Passed</th><th>Batch</th><th>Pages</th><th>Folder location</th><th>File</th><th>Note</th></tr></thead><tbody>';
+    main.forEach(function(it, i){
+      h += "<tr><td>" + (i+1) + "</td><td>" + esc(it.year || "No date") + "</td><td>" + esc(it.region) + "</td><td>"
+        + esc(it.program || "CHECK") + "</td><td>" + esc(semLabel(it.semester)) + "</td><td>" + esc(it.session) + "</td><td>"
+        + esc(it.examType) + "</td><td>" + esc(it.date) + "</td><td>" + esc(it.examDates || "CHECK") + "</td><td>"
+        + esc(it.notifNo || "CHECK") + "</td><td>" + esc(it.appeared || "CHECK") + "</td><td>" + esc(it.passed || "CHECK") + "</td><td>"
+        + esc(it.batch) + "</td><td>" + esc(it.pages || "—") + "</td><td>" + esc(it.path) + "</td><td>" + esc(it.fileName) + "</td><td>"
+        + esc(it.check || (it.readOk ? "" : "File name only")) + "</td></tr>";
+    });
+    h += "</tbody></table></div>";
+    h += "<h3>Duplicates — not counted in the main list</h3>";
+    if (!dups.length) {
+      h += "<p>None found.</p>";
+    } else {
+      h += "<ul>";
+      dups.forEach(function(it){
+        h += "<li><b>" + esc(it.fileName) + "</b><br>Location: " + esc(it.path) + "<br>" + esc(it.dupe) + "</li>";
+      });
+      h += "</ul>";
+    }
+    h += "<p>Batch marked CHECK is calculated from Semester + exam year, not written in the result. A field marked CHECK could not be found in the PDF or the file name.</p>";
+    return h;
+  }
+  function fullReportHtml(){
+    return '<!doctype html>\n<html lang="en"><head><meta charset="utf-8">'
+      + '<meta name="viewport" content="width=device-width, initial-scale=1">'
+      + "<title>KMU Results — Deep Scan Report</title>"
+      + "<style>body{font-family:Arial,Helvetica,sans-serif;color:#1a231e;margin:24px;line-height:1.5}"
+      + "h2{margin:0 0 8px}h3{margin:22px 0 8px}table{border-collapse:collapse;width:100%;font-size:12px}"
+      + "th,td{border:1px solid #bbb;padding:5px 7px;text-align:left;vertical-align:top}th{background:#eef2ee}"
+      + "li{margin-bottom:8px}</style></head><body>"
+      + reportBodyHtml()
+      + "</body></html>";
+  }
+  var reportView = document.getElementById("reportView");
+  function openReport(){
+    reportView.innerHTML = '<button type="button" class="btn-ghost btn-small no-print" id="reportCloseBtn" style="float:right;">Close report</button>'
+      + reportBodyHtml();
+    reportView.classList.add("on");
+    document.getElementById("reportCloseBtn").addEventListener("click", function(){
+      reportView.classList.remove("on");
+      document.getElementById("sendBox").scrollIntoView({behavior: reducedMotion ? "auto" : "smooth", block:"start"});
+    });
+    reportView.scrollIntoView({behavior: reducedMotion ? "auto" : "smooth", block:"start"});
+  }
+
+  document.getElementById("copyBtn").addEventListener("click", function(){
+    var txt = listText.value;
+    function done(){ copyMsg.textContent = "Copied. Now paste it in your chat with Marigold."; copyMsg.className = "msg good"; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(done, function(){ fallback(); });
+    } else { fallback(); }
+    function fallback(){
+      listText.removeAttribute("readonly");
+      listText.select();
+      try { document.execCommand("copy"); done(); }
+      catch(e){ copyMsg.textContent = "Copy did not work on this phone. Use “Download list (.txt)” and send that file instead."; copyMsg.className = "msg"; }
+      listText.setAttribute("readonly","");
+    }
+  });
+  document.getElementById("dlPdfBtn").addEventListener("click", function(){
+    var ok = false;
+    try { ok = tryDownloadBlob("KMU_Scan_Report.pdf", buildPdfBlob()); } catch(e) { ok = false; }
+    dlMsg(ok, "KMU_Scan_Report.pdf");
+  });
+  document.getElementById("dlDocBtn").addEventListener("click", function(){
+    dlMsg(tryDownload("KMU_Scan_Report.doc", buildWordDoc(), "application/msword;charset=utf-8"), "KMU_Scan_Report.doc");
+  });
+  document.getElementById("dlTxtBtn").addEventListener("click", function(){
+    dlMsg(tryDownload("KMU_Scan_Report.txt", listText.value, "text/plain;charset=utf-8"), "KMU_Scan_Report.txt");
+  });
+  document.getElementById("dlCsvBtn").addEventListener("click", function(){
+    dlMsg(tryDownload("KMU_Scan_Report.csv", buildCsv(), "text/csv;charset=utf-8"), "KMU_Scan_Report.csv");
+  });
+  document.getElementById("dlHtmlBtn").addEventListener("click", function(){
+    dlMsg(tryDownload("KMU_Scan_Report.html", fullReportHtml(), "text/html;charset=utf-8"), "KMU_Scan_Report.html");
+  });
+  document.getElementById("reportBtn").addEventListener("click", function(){
+    openReport();
+    copyMsg.textContent = "Full report opened below. For a direct file, use “Download report (.pdf)” or “Download report (.doc)” above.";
+    copyMsg.className = "msg good";
+  });
+  document.getElementById("shareBtn").addEventListener("click", function(){
+    var txt = listText.value;
+    if (navigator.share) {
+      navigator.share({title: "KMU Results — Deep Scan Report", text: txt}).then(function(){
+        copyMsg.textContent = "Shared."; copyMsg.className = "msg good";
+      }, function(){
+        copyMsg.textContent = "Sharing was closed. Use the Copy button instead — it always works."; copyMsg.className = "msg";
+      });
+    } else {
+      copyMsg.textContent = "This phone does not offer Share here. Use the Copy button instead — it always works."; copyMsg.className = "msg";
+    }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
