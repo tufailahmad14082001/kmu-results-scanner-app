@@ -15,6 +15,7 @@ import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.util.Base64;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.webkit.DownloadListener;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
@@ -109,6 +110,10 @@ public class MainActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT));
         setContentView(webView);
 
+        // FIX 2026-11-15g: keep the screen on while the app is open, so a
+        // long scan is never cut off by the screen turning off.
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
@@ -117,6 +122,7 @@ public class MainActivity extends Activity {
         s.setBuiltInZoomControls(false);
 
         webView.addJavascriptInterface(new DownloadBridge(), "KmuBridge");
+        webView.addJavascriptInterface(new ScanBridge(), "ScanBridge");
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -330,6 +336,35 @@ public class MainActivity extends Activity {
                 }
             } catch (Exception e) {
                 toastOnUi("Download failed. Use the Copy button instead.");
+            }
+        }
+    }
+
+    /**
+     * Called from the page when a scan starts / finishes. Starts a small
+     * foreground service (ScanService) that shows one quiet notification
+     * and keeps the app alive while the scan runs, so the scan can finish
+     * even if the user switches to another app or locks the phone.
+     */
+    private class ScanBridge {
+        @JavascriptInterface
+        public void startScan() {
+            try {
+                Intent i = new Intent(MainActivity.this, ScanService.class);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(i);
+                } else {
+                    startService(i);
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        @JavascriptInterface
+        public void stopScan() {
+            try {
+                stopService(new Intent(MainActivity.this, ScanService.class));
+            } catch (Exception ignored) {
             }
         }
     }
