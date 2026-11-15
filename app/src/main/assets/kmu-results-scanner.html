@@ -1929,7 +1929,12 @@
         return withTimeout(window.Tesseract.createWorker("eng", 1, {
           workerPath: "worker.min.js",
           corePath: "./",
-          langPath: "./"
+          langPath: "./",
+          // FIX 2026-11-16b: the app build stores the language file
+          // decompressed (eng.traineddata, no .gz), so ask for the plain
+          // file — the default would ask for eng.traineddata.gz, which is
+          // not in the app, and the reader would fail offline.
+          gzip: false
         }), 90000);
       } catch(e) { return Promise.resolve(null); }
     }
