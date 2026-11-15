@@ -994,7 +994,11 @@
     return r.replace(/\s*\(.*?\)\s*/g, "").trim().toLowerCase();
   }
   function matchKnown(it){
-    if (!it.semester || !it.region || it.region.indexOf("CHECK") >= 0) return false;
+    // FIX 2026-11-15: a Post RN result is not a BSN result, even when its
+    // region, semester and session match a BSN row in the known list.
+    if (it.program && /post/i.test(it.program)) return false;
+    if ((!it.semester && !it.semesters) || !it.region || it.region.indexOf("CHECK") >= 0) return false;
+    if (it.semesters) return false;
     var reg = normRegionName(it.region);
     for (var i = 0; i < KNOWN.length; i++) {
       var k = KNOWN[i];
@@ -1097,7 +1101,42 @@
     if (m) return parseInt(m[1],10);
     m = t.match(/\bbsn\s*[- ]?([1-8])\b/);
     if (m) return parseInt(m[1],10);
+    // FIX 2026-11-15: the file names in this collection almost never write the
+    // word "Semester". They write "BSN 1st Summer", "BSN 2nd Fall", "BSN 3rd
+    // Final Result", "Result BSN 2nd(old Grading)". The number after BSN is
+    // the semester, and the number before Fall/Spring/Summer/Winter/Final is
+    // the semester too. Without these two lines the scanner said "semester
+    // unknown" even though the semester was plainly written in the file name.
+    m = t.match(/\bbsn\s+(1st|2nd|3rd|4th|5th|6th|7th|8th)\b/);
+    if (m) return ORD[m[1]];
+    m = t.match(/\b(1st|2nd|3rd|4th|5th|6th|7th|8th)\s+(fall|spring|summer|winter|final|revised|result|makeup|reappear|old)\b/);
+    if (m) return ORD[m[1]];
+    m = t.match(/\b(1st|2nd|3rd|4th|5th|6th|7th|8th)\s*\(/);
+    if (m) return ORD[m[1]];
     return null;
+  }
+  // A file that holds several semesters at once, e.g.
+  // "Mardan BSN 1st,2nd,3rd,4th,5th,6th,7th Summer26.pdf".
+  // Returns the list [1,2,3,4,5,6,7], or null for a single-semester file.
+  function findSemesterList(text){
+    var t = " " + text.toLowerCase().replace(/\s+/g," ") + " ";
+    var m = t.match(/\b((?:1st|2nd|3rd|4th|5th|6th|7th|8th)(?:\s*,\s*(?:1st|2nd|3rd|4th|5th|6th|7th|8th))+)\b/);
+    if (!m) return null;
+    var out = [], seen = {};
+    m[1].split(",").forEach(function(x){
+      var v = ORD[x.trim()];
+      if (v && !seen[v]) { seen[v] = true; out.push(v); }
+    });
+    out.sort(function(a,b){ return a-b; });
+    return out.length >= 2 ? out : null;
+  }
+  // Display text for a semester: "1st-7th" for a multi-semester file,
+  // otherwise "1st", "2nd", ... or "— CHECK".
+  function semDisplay(it){
+    if (it.semesters && it.semesters.length) {
+      return semLabel(it.semesters[0]) + "-" + semLabel(it.semesters[it.semesters.length-1]);
+    }
+    return semLabel(it.semester);
   }
   function semLabel(n){ return n ? (n + (n===1?"st":n===2?"nd":n===3?"rd":"th")) : "— CHECK"; }
   function findRegion(text){
@@ -1130,7 +1169,9 @@
     return null;
   }
   function findExamType(text, sessionName){
-    if (/make\s?-?\s?up|makeup/i.test(text)) return "Makeup";
+    // FIX 2026-11-15: "Reappear" is a Makeup exam. Before this, a Reappear
+    // file was called Regular, and the guesser then wrongly guessed its type.
+    if (/reappear|make\s?-?\s?up|makeup/i.test(text)) return "Makeup";
     if (/supplementary/i.test(text)) return "Supplementary";
     if (sessionName === "Summer") return "Summer";
     if (sessionName === "Winter") return "Winter";
@@ -1252,7 +1293,10 @@
       g.why.push("semester " + semLabel(rec.semester) + " normally sits in the " + (rec.semester % 2 === 1 ? "Fall" : "Spring") + " session");
     }
     // Exam-type guess from the known list: same region + semester seen before.
-    if (!rec.typeExplicit && rec.semester && rec.region && rec.region.indexOf("CHECK") < 0) {
+    // FIX 2026-11-15: only guess when the session itself is not known. A file
+    // with a clear Spring/Fall session is Regular unless its name says
+    // Reappear/Makeup — guessing it as Makeup from the known list was wrong.
+    if (!rec.typeExplicit && !rec.semesters && rec.semester && rec.region && rec.region.indexOf("CHECK") < 0 && (!rec.session || rec.session === "—" || !rec.sessionYear)) {
       var types = {};
       KNOWN.forEach(function(k){
         if (normRegionName(k.region) === normRegionName(rec.region) && k.sem === rec.semester && k.type) types[k.type] = true;
@@ -1287,7 +1331,7 @@
   function plainLine(it){
     var bits = [];
     bits.push(it.program ? it.program : "Nursing");
-    if (it.semester) bits.push(semLabel(it.semester) + " semester");
+    if (it.semester) bits.push(semDisplay(it) + " semester");
     var s = "This is the " + bits.join(" ") + " result";
     if (it.region && it.region.indexOf("CHECK") < 0) s += " of " + it.region + " region";
     if (it.session && it.session !== "—") s += ", " + it.session;
@@ -1302,6 +1346,8 @@
     var rec = { readOk:false };
     var sem = findSemester(text);
     if (sem) rec.semester = sem;
+    var sems = findSemesterList(text);
+    if (sems) rec.semesters = sems;
     var reg = findRegion(text);
     if (reg) { rec.region = reg.region; rec.regionHow = reg.how; }
     var ses = findSession(text);
@@ -1337,6 +1383,7 @@
     rec.year = rec.dateYear || rec.sessionYear || null;
     rec.examDates = rec.examStart ? (rec.examStart + (rec.examEnd ? " to " + rec.examEnd : "")) : null;
     var b = findBatchCode(rec.fileName);
+    if (!b && rec.semesters) { b = { label: "All batches", how: "One file, 1st to 7th semester" }; }
     if (!b) b = calcBatch(rec.semester, rec.sessionYear || rec.dateYear);
     rec.batch = b ? b.label : "—";
     rec.batchHow = b ? b.how : "No code — CHECK";
@@ -1344,7 +1391,7 @@
     var missing = [];
     if (!rec.year) missing.push("year");
     if (!rec.region) missing.push("region");
-    if (!rec.semester) missing.push("semester");
+    if (!rec.semester && !rec.semesters) missing.push("semester");
     if (!rec.program) missing.push("program");
     rec.check = missing.length ? ("CHECK: " + missing.join(", ")) : "";
     rec.guess = computeGuess(rec);
@@ -1377,6 +1424,7 @@
       ocrOk: false,
       ocrTried: false,
       semester: fromContent.semester || fromName.semester || fromPath.semester || null,
+      semesters: fromContent.semesters || fromName.semesters || fromPath.semesters || null,
       region: (fromContent.region || fromName.region || fromPath.region || null),
       regionHow: fromContent.region ? fromContent.regionHow : (fromName.region ? "file name" : (fromPath.region ? "folder name" : null)),
       session: fromContent.session || fromName.session || fromPath.session || "—",
@@ -1413,6 +1461,7 @@
 
   // ---------- duplicate detection ----------
   function contentKey(it){
+    if (it.semesters) return null;
     if (!it.semester || !it.sessionYear || !it.region || it.region.indexOf("CHECK") >= 0) return null;
     return (it.region + "|" + it.semester + "|" + it.session + "|" + it.examType).toLowerCase();
   }
@@ -1469,6 +1518,7 @@
     var p = parseFromText(text, rec.fileName);
     var got = false;
     if (!rec.semester && p.semester) { rec.semester = p.semester; got = true; }
+    if (!rec.semesters && p.semesters) { rec.semesters = p.semesters; got = true; }
     if ((!rec.region || rec.region.indexOf("CHECK") >= 0) && p.region) { rec.region = p.region; rec.regionHow = "OCR — read from the photo"; got = true; }
     if (rec.session === "—" && p.session) { rec.session = p.session; rec.sessionYear = p.sessionYear || null; got = true; }
     if (!rec.typeExplicit && p.examType && p.examType !== "Regular") { rec.examType = p.examType; rec.typeExplicit = true; got = true; }
@@ -1614,7 +1664,7 @@
       if (ya !== yb) return ya - yb;
       var ra = regionRank(a.region), rb = regionRank(b.region);
       if (ra !== rb) return ra - rb;
-      var sa = a.semester || 99, sb = b.semester || 99;
+      var sa = (a.semesters ? a.semesters[0] : a.semester) || 99, sb = (b.semesters ? b.semesters[0] : b.semester) || 99;
       if (sa !== sb) return sa - sb;
       if (a.session !== b.session) return a.session < b.session ? -1 : 1;
       return (a.dateSort||0) - (b.dateSort||0);
@@ -1692,7 +1742,7 @@
 
     var sorted = sortedItems();
     var shown = filterText ? sorted.filter(function(it){
-      var hay = (it.fileName + " " + it.region + " " + it.session + " " + it.examType + " " + (it.program || "") + " " + semLabel(it.semester) + " " + (it.colleges || []).join(" ")).toLowerCase();
+      var hay = (it.fileName + " " + it.region + " " + it.session + " " + it.examType + " " + (it.program || "") + " " + semDisplay(it) + " " + (it.colleges || []).join(" ")).toLowerCase();
       return hay.indexOf(filterText) >= 0;
     }) : sorted;
     var html = "";
@@ -1723,7 +1773,7 @@
         + '<div class="meta"><span>' + esc(plainLine(it)) + '</span></div>'
         + '<div class="meta">'
         + '<span>Program: <b>' + (it.program ? esc(it.program) : "— CHECK") + '</b></span>'
-        + '<span>Sem: <b>' + esc(semLabel(it.semester)) + '</b></span>'
+        + '<span>Sem: <b>' + esc(semDisplay(it)) + '</b></span>'
         + '<span>Session: <b>' + esc(it.session) + '</b></span>'
         + '<span>Type: <b>' + esc(it.examType) + '</b></span>'
         + '<span>Result date: <b>' + esc(it.date) + '</b></span>'
@@ -1789,7 +1839,7 @@
       if (it.region !== curRegion) { curRegion = it.region; lines.push("-- " + curRegion + " — " + curYear + " --"); }
       n++;
       lines.push(
-        n + ". [" + yKey + " | " + it.region + "] Sem " + semLabel(it.semester)
+        n + ". [" + yKey + " | " + it.region + "] Sem " + semDisplay(it)
         + " | " + it.session + " | " + it.examType + " | Result date: " + it.date
         + " | Batch: " + it.batch + " (" + it.batchHow + ")"
         + " | Location: " + it.path
@@ -1816,7 +1866,7 @@
   function buildCsv(){
     var rows = [["No","Year","Region","Program","Semester","Session","Type","Result Date","Exam Dates","Notification / Result No","Appeared","Passed","University","Pages","Size","Batch","Batch From","Folder Location","Folder","File Name","Read From","Duplicate?","Duplicate Detail","Note","In Simple Words","Colleges In This Result","Regional Director Sign","Read By OCR","In Your Known List","Best Guess"]];
     sortedItems().forEach(function(it, i){
-      rows.push([i+1, it.year || "No date", it.region, it.program || "CHECK", semLabel(it.semester), it.session, it.examType, it.date,
+      rows.push([i+1, it.year || "No date", it.region, it.program || "CHECK", semDisplay(it), it.session, it.examType, it.date,
                  it.examDates || "CHECK", it.notifNo || "CHECK", it.appeared || "CHECK", it.passed || "CHECK", it.university || "CHECK",
                  it.pages || "", it.size, it.batch, it.batchHow, it.path, it.folder, it.fileName,
                  it.readOk ? "Inside PDF (every page)" : (it.ocrOk ? "OCR (photo pages)" : "File name only"), it.dupe ? "DUPLICATE?" : "", it.dupe || "", it.check || "",
@@ -1963,7 +2013,7 @@
     h += '<div class="report-scroll"><table><thead><tr><th>No</th><th>Year</th><th>Region</th><th>Program</th><th>Sem</th><th>Session</th><th>Type</th><th>Result date</th><th>Exam dates</th><th>Notif. No</th><th>Appeared</th><th>Passed</th><th>Batch</th><th>Pages</th><th>Folder location</th><th>File</th><th>Note</th></tr></thead><tbody>';
     main.forEach(function(it, i){
       h += "<tr><td>" + (i+1) + "</td><td>" + esc(it.year || "No date") + "</td><td>" + esc(it.region) + "</td><td>"
-        + esc(it.program || "CHECK") + "</td><td>" + esc(semLabel(it.semester)) + "</td><td>" + esc(it.session) + "</td><td>"
+        + esc(it.program || "CHECK") + "</td><td>" + esc(semDisplay(it)) + "</td><td>" + esc(it.session) + "</td><td>"
         + esc(it.examType) + "</td><td>" + esc(it.date) + "</td><td>" + esc(it.examDates || "CHECK") + "</td><td>"
         + esc(it.notifNo || "CHECK") + "</td><td>" + esc(it.appeared || "CHECK") + "</td><td>" + esc(it.passed || "CHECK") + "</td><td>"
         + esc(it.batch) + "</td><td>" + esc(it.pages || "—") + "</td><td>" + esc(it.path) + "</td><td>" + esc(it.fileName) + "</td><td>"
