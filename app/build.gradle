@@ -32,5 +32,7 @@ android {
 }
 
 dependencies {
-    // No libraries needed: plain Android WebView + Java only.
+    // FIX 2026-11-16b: WebViewAssetLoader (serves the app's own files over
+    // a real https origin, so the bundled photo reader works fully offline).
+    implementation 'androidx.webkit:webkit:1.8.0'
 }
