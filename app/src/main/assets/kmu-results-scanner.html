@@ -614,7 +614,7 @@
         <button type="button" class="rpick" data-region="All Region">All Region</button>
       </div>
       <div class="region-pick-note">Pick Mardan and only Mardan results are read — the rest are listed separately, not read. Pick All regions to read everything.</div>
-      <div class="est-note">Estimated time: about 6 seconds per file — a folder of 100 files takes about 10 minutes. A text PDF is faster, a photo PDF takes longer. The live time left is shown while it scans. The screen stays on while it scans, and the scan keeps going in the background.</div>
+      <div class="est-note">Fast scan: if a file's name already says the region, semester and session, it is read from the name in about a second — a folder of 100 named files takes about 2 minutes. Only files whose name does not say those three things are read from the photo (page 1 only), and those take longer. The live time left is shown while it scans. The screen stays on while it scans, and the scan keeps going in the background.</div>
       <div class="resumebox" id="resumeBox" style="display:none"><span id="resumeText"></span> <button type="button" class="btn-ghost btn-small" id="clearSavedBtn">Clear saved results</button></div>
     </div>
   </section>
@@ -1402,6 +1402,11 @@
       var nm = {SP:"Spring", FA:"Fall", SU:"Summer", WI:"Winter"}[m[1].toUpperCase()];
       return {name: nm, year: null};
     }
+    // FAST MODE (2026-11-16c): a bare session word with no year after it
+    // ("Result 2nd Spring") is still a session — the year then comes
+    // from the date or the batch.
+    m = text.match(/\b(Spring|Fall|Autumn|Summer|Winter)\b/i);
+    if (m) return {name: m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase(), year: null};
     return null;
   }
   function findExamType(text, sessionName){
@@ -1758,6 +1763,20 @@
     return rec;
   }
 
+  // FAST MODE (2026-11-16c): if the file name or the folder name already
+  // says the region, the semester and the session, there is no need to
+  // read the photo at all — the name already says what the result is.
+  function nameComplete(file){
+    var nm = (file.name || "").replace(/[_\-]+/g, " ");
+    var p = parseFromText(nm, file.name);
+    var path = folderPathOf(file);
+    var pp = parseFromText(path.replace(/[\/]/g, " "), file.name);
+    var region = p.region || pp.region;
+    var sem = p.semester || p.semesters || pp.semester || pp.semesters;
+    var sess = p.session || pp.session;
+    return !!(region && sem && sess);
+  }
+
   function buildRecord(file, extracted){
     var name = file.name;
     var pdfText = (extracted && extracted.text) || "";
@@ -1782,6 +1801,7 @@
       pages: pages,
       readOk: !!(pdfText && pdfText.trim().length > 40),
       ocrOk: false,
+      nameOk: false,
       ocrTried: false,
       semester: fromContent.semester || fromName.semester || fromPath.semester || null,
       semesters: fromContent.semesters || fromName.semesters || fromPath.semesters || null,
@@ -2002,18 +2022,28 @@
       if (window.pdfjsLib.GlobalWorkerOptions && !window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
         window.pdfjsLib.GlobalWorkerOptions.workerSrc = "pdf.worker.min.js";
       }
-      return window.pdfjsLib.getDocument({ data: buf }).promise;
+      // FIX 2026-11-16c: hard limit — if the PDF cannot be opened in
+      // 30 seconds, give up on reading the photo and use the file name.
+      return withTimeout(window.pdfjsLib.getDocument({ data: buf }).promise, 30000);
     }).then(function(pdf){
-      var total = pdf.numPages || rec.pages || 1;
-      var last = Math.min(10, total);
+      var total = (pdf && pdf.numPages) || rec.pages || 1;
+      // FAST MODE: OCR page 1 only (was 10). Page 1 has the header —
+      // region, semester, session, date. Reading 10 photo pages is what
+      // made a folder take over an hour. Pass % and counts from later
+      // pages are a separate slow "deep read", not part of this scan.
+      var last = Math.min(1, total);
       function renderPage(n, rot){
         return pdf.getPage(n).then(function(page){
-          var vp = page.getViewport({ scale: 2, rotation: rot || 0 });
+          // FAST MODE (2026-11-16c): scale 1.5 (was 2) — about half the
+          // pixels, still sharp enough for printed text, much faster.
+          var vp = page.getViewport({ scale: 1.5, rotation: rot || 0 });
           var canvas = document.createElement("canvas");
           canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
           var ctx = canvas.getContext("2d");
           ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-          return page.render({ canvasContext: ctx, viewport: vp }).promise.then(function(){
+          // FIX 2026-11-16c: hard limit — if a page cannot be drawn in
+          // 30 seconds, stop waiting for it and move on.
+          return withTimeout(page.render({ canvasContext: ctx, viewport: vp }).promise, 30000).then(function(){
             // FIX 2026-11-15e: grayscale before OCR (research: 2x upscale +
             // grayscale helps; binarizing first makes it worse, so no threshold).
             try {
@@ -2042,6 +2072,9 @@
         var rots = [0, 90, 270];
         function attempt(k){
           if (skipCurrentFile) return Promise.resolve();
+          // FIX 2026-11-16c: the reader failed — no point drawing more
+          // pages for it. The file is read from its name instead.
+          if (ocrFailed) return Promise.resolve();
           if (k >= rots.length) return Promise.resolve();
           return renderPage(1, rots[k]).then(function(c){
             return ocrCanvasText(c).then(function(t){
@@ -2055,6 +2088,9 @@
       }
       function readPage(n){
         if (skipCurrentFile) return Promise.resolve(all);
+        // FIX 2026-11-16c: the reader failed — stop here, do not draw
+        // more pages for nothing. The file is read from its name instead.
+        if (ocrFailed) return Promise.resolve(all);
         if (n > last) return Promise.resolve(all);
         if (n === 1) {
           return readFirstPage().then(function(){
@@ -2251,15 +2287,15 @@
     paused = false; resumePhase = 1; resumeIndex = 0; resumeScan = null;
     document.body.classList.add("scanning");
     progressWrap.classList.add("on");
-    // FIX 2026-11-15b: estimated time. About 6 seconds a file on average
-    // (text ~1s, photo OCR ~5-10s for the first page). Shown up front and
-    // updated live from the real speed, so the user knows how long it takes.
+    // FIX 2026-11-16c: estimated time, fast mode. About 3 seconds a file
+    // on average (a named file ~1s, a photo read from page 1 ~20s).
+    // Shown up front and updated live from the real speed.
     var scanStart = Date.now();
-    var estTotalMs = pdfs.length * 6000;
+    var estTotalMs = pdfs.length * 3000;
     var roundFiles = pdfs.length; // files in this round (saved + to read)
     function timeLeft(done){
       var el = Date.now() - scanStart;
-      var avg = done > 0 ? el / done : 6000;
+      var avg = done > 0 ? el / done : 3000;
       return Math.round(avg * (roundFiles - done));
     }
     // Show the upload the moment the files are picked — before any reading
@@ -2314,7 +2350,10 @@
       extractPdfText(f).then(function(ex){
         if (myGen !== scanGen) return;
         var rec = buildRecord(f, ex);
-        if (!rec.readOk && ocrAvailable()) {
+        // FAST MODE: the name already says region + semester + session —
+        // do not read the photo at all. Mark it so the card says so.
+        if (!rec.readOk && nameComplete(f)) rec.nameOk = true;
+        if (!rec.readOk && !rec.nameOk && ocrAvailable()) {
           photoList.push({ file: f, rec: rec });
         } else {
           afterRead(rec);
@@ -2323,7 +2362,8 @@
       }).catch(function(){
         if (myGen !== scanGen) return;
         var rec2 = buildRecord(f, null);
-        if (!rec2.readOk && ocrAvailable()) photoList.push({ file: f, rec: rec2 });
+        if (!rec2.readOk && nameComplete(f)) rec2.nameOk = true;
+        if (!rec2.readOk && !rec2.nameOk && ocrAvailable()) photoList.push({ file: f, rec: rec2 });
         else afterRead(rec2);
         phase1(i + 1);
       });
@@ -2332,7 +2372,7 @@
       render(); // show the text results now, before the slow photo part
       if (!photoList.length) { finishScan(); return; }
       var pct = Math.round((doneCount / Math.max(1, roundFiles)) * 100);
-      setProgress(pct, '<span class="pct">' + pct + '%</span> Text done — now reading ' + photoList.length + " photo PDF(s) with OCR. This is the slow part.");
+      setProgress(pct, '<span class="pct">' + pct + '%</span> Text done — now reading ' + photoList.length + " photo PDF(s) with OCR (page 1 only).");
       phase2(0);
     }
     function phase2(i){
@@ -2345,7 +2385,7 @@
       if (ocrWorkerState !== "ready") {
         setProgress(pct, '<span class="pct">' + pct + '%</span> Getting the photo reader ready — the first time this takes up to 2 minutes. Photo ' + (i+1) + " of " + photoList.length + ": " + esc(f.name));
       } else {
-        setProgress(pct, '<span class="pct">' + pct + '%</span> Photo ' + (i+1) + " of " + photoList.length + " — reading the photo with OCR (first 10 pages, stops early when it is found). This one takes a little longer: " + esc(f.name) + " — about " + fmtDur(timeLeft(doneCount)) + " left.");
+        setProgress(pct, '<span class="pct">' + pct + '%</span> Photo ' + (i+1) + " of " + photoList.length + " — reading the photo with OCR (page 1 only). This one takes a little longer: " + esc(f.name) + " — about " + fmtDur(timeLeft(doneCount)) + " left.");
       }
       uploadText.innerHTML = "Files received: <b>" + all.length + "</b> — now reading photo " + (i+1) + " of " + photoList.length + "… About " + fmtDur(timeLeft(doneCount)) + " left.";
       skipCurrentFile = false;
@@ -2369,11 +2409,13 @@
       document.body.classList.remove("scanning");
       var dc = dupItems().length;
       var ocrN = items.filter(function(x){ return x.ocrOk; }).length;
+      var nameN = items.filter(function(x){ return x.nameOk; }).length;
       var photoLeft = items.filter(function(x){ return !x.readOk && !x.ocrOk; }).length;
       setProgress(100, '<span class="pct">100%</span> All done — every file has been read. Finished in ' + fmtDur(Date.now() - scanStart) + '. '
         + newInRound + " new file(s) in this round."
         + (savedCount ? " " + savedCount + " file(s) were already saved from before." : "")
         + (ocrN ? " " + ocrN + " photo PDF(s) were read with OCR." : "")
+        + (nameN ? " " + nameN + " file(s) were read from the file name — no photo reading needed." : "")
         + (photoLeft && !ocrAvailable() ? " " + photoLeft + " photo PDF(s) could not be read this time: the photo reader inside the app could not start. Connect to the internet once and scan again, and those will be read from the photo itself." : "")
         + (cloned ? " " + cloned + " same-file copy(ies) flagged." : "")
         + (others ? " " + others + " other file(s) counted." : "")
@@ -2546,7 +2588,7 @@
       if (it.ocrOk) tags += ' <span class="tag tag-ocr">Read by OCR</span>';
       tags += it.check
         ? ' <span class="tag tag-check">' + esc(it.check) + '</span>'
-        : (it.readOk ? ' <span class="tag tag-ok">Read from PDF</span>' : (it.ocrOk ? '' : ' <span class="tag tag-check">From file name only</span>'));
+        : (it.readOk ? ' <span class="tag tag-ok">Read from PDF</span>' : (it.ocrOk ? '' : (it.nameOk ? ' <span class="tag tag-ok">From the name — photo not needed</span>' : ' <span class="tag tag-check">From file name only</span>')));
       var delay = Math.min(animIdx * 50, 600); animIdx++;
       html += '<div class="item' + (it.dupe ? " is-dupe" : "") + '" data-sem="' + (it.semester ? it.semester : "") + '" style="--d:' + delay + 'ms">'
         + '<div class="fname">' + esc(it.fileName) + tags + '</div>'
@@ -2573,7 +2615,7 @@
         + (it.grading ? '<span>Grading: <b>' + esc(it.grading) + '</b></span>' : '')        + (it.part ? '<span>Part: <b>' + it.part + '</b></span>' : '')
         + (it.revised ? '<span><b>Revised version</b></span>' : '')
         + '<span>Regional Director sign: <b>' + (it.hasRD ? "Found in the PDF" : "Not seen") + '</b></span>'
-        + '<span>Read from: <b>' + (it.readOk ? "Inside the PDF (first 10 pages)" : (it.ocrOk ? "OCR — first 10 pages of the photo" : "File name only — no readable text inside")) + '</b></span>'
+        + '<span>Read from: <b>' + (it.readOk ? "Inside the PDF (first 10 pages)" : (it.ocrOk ? "OCR — page 1 of the photo" : (it.nameOk ? "File name — the name says the region, semester and session, so the photo was not read" : "File name only — no readable text inside"))) + '</b></span>'
         + '</div>'
         + '<div class="newname">New name: <button type="button" class="newname-btn" data-name="' + esc(suggestedName(it)) + '">' + esc(suggestedName(it)) + '</button> <span class="newname-hint">tap to copy · ? means missing</span></div>'
         + (it.guess ? '<div class="guess">Best guess: <b>' + esc(guessText(it.guess)) + '</b> — this is only a guess, please check it.</div>' : '')
@@ -2598,7 +2640,7 @@
       + " | Passed: " + (it.passed || "CHECK")
       + " | University: " + (it.university || "CHECK")
       + " | Regional Director sign: " + (it.hasRD ? "found" : "not seen")
-      + " | Read from: " + (it.readOk ? "inside the PDF (first 10 pages)" : (it.ocrOk ? "OCR — first 10 pages of the photo" : "file name only — no readable text inside"));
+      + " | Read from: " + (it.readOk ? "inside the PDF (first 10 pages)" : (it.ocrOk ? "OCR — page 1 of the photo" : (it.nameOk ? "file name — the name says the region, semester and session, so the photo was not read" : "file name only — no readable text inside")));
     s += "\n      In simple words: " + plainLine(it);
     s += "\n      New name: " + suggestedName(it) + " (? means that part is missing)";
     if (it.creditHours) s += "\n      Credit hours: " + it.creditHours;
@@ -2665,7 +2707,7 @@
       rows.push([i+1, it.year || "No date", it.region, it.program || "CHECK", semDisplay(it), it.session, it.examType, it.date,
                  it.examDates || "CHECK", it.notifNo || "CHECK", it.appeared || "CHECK", it.passed || "CHECK", (passPct(it) != null ? passPct(it) + "%" : ""), it.grading || "", it.university || "CHECK",
                  it.pages || "", it.size, it.batch, it.batchHow, it.path, it.folder, it.fileName, suggestedName(it),
-                 it.readOk ? "Inside PDF (first 10 pages)" : (it.ocrOk ? "OCR (first 10 pages)" : "File name only"), it.dupe ? "DUPLICATE?" : "", it.dupe || "", it.check || "",
+                 it.readOk ? "Inside PDF (first 10 pages)" : (it.ocrOk ? "OCR (page 1)" : (it.nameOk ? "File name (name complete)" : "File name only")), it.dupe ? "DUPLICATE?" : "", it.dupe || "", it.check || "",
                  plainLine(it), it.creditHours || "", it.hasRD ? "Found" : "Not seen", it.ocrOk ? "Yes" : "", it.known ? "Yes" : "", guessText(it.guess), it.part || "", it.revised ? "Yes" : ""]);
     });
     return rows.map(function(r){ return r.map(csvCell).join(","); }).join("\n");
@@ -2825,7 +2867,7 @@
         + esc(it.examType) + "</td><td>" + esc(it.date) + "</td><td>" + esc(it.examDates || "CHECK") + "</td><td>"
         + esc(it.notifNo || "CHECK") + "</td><td>" + esc(it.appeared || "CHECK") + "</td><td>" + esc(it.passed || "CHECK") + "</td><td>" + (passPct(it) != null ? passPct(it) + "%" : "—") + "</td><td>" + esc(it.grading || "—") + "</td><td>"
         + esc(it.batch) + "</td><td>" + esc(it.pages || "—") + "</td><td>" + esc(it.path) + "</td><td>" + esc(it.fileName) + "</td><td>" + esc(suggestedName(it)) + "</td><td>"
-        + esc([it.check, it.known ? "In your known list" : "", it.ocrOk ? "Read by OCR" : "", (it.readOk || it.ocrOk) ? "" : "File name only", it.guess ? ("Best guess: " + guessText(it.guess)) : "", (it.creditHours ? ("Credit hours: " + it.creditHours) : ""), plainLine(it)].filter(Boolean).join(" · ")) + "</td></tr>";
+        + esc([it.check, it.known ? "In your known list" : "", it.ocrOk ? "Read by OCR" : "", (it.readOk || it.ocrOk) ? "" : (it.nameOk ? "File name — photo not needed" : "File name only"), it.guess ? ("Best guess: " + guessText(it.guess)) : "", (it.creditHours ? ("Credit hours: " + it.creditHours) : ""), plainLine(it)].filter(Boolean).join(" · ")) + "</td></tr>";
     });
     h += "</tbody></table></div>";
     h += "<h3>Duplicates — not counted in the main list</h3>";
