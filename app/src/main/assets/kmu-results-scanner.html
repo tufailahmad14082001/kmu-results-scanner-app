@@ -403,6 +403,7 @@
   }
   .rpick.on{background:linear-gradient(135deg, var(--acc-bright), var(--acc-deep)); color:#fff; border-color:transparent;}
   .region-pick-note{font-size:13px; color:var(--ink2);}
+  .est-note{font-size:13px; color:var(--ink2); margin-top:8px;}
   .tabs{display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 4px;}
   .tab{
     border:1px solid var(--card-brd); background:var(--bg); color:var(--ink);
@@ -614,6 +615,7 @@
         <button type="button" class="rpick" data-region="All Region">All Region</button>
       </div>
       <div class="region-pick-note">Pick Mardan and only Mardan results are read — the rest are listed separately, not read. Pick All regions to read everything.</div>
+      <div class="est-note">Estimated time: about 6 seconds per file — a folder of 100 files takes about 10 minutes. A text PDF is faster, a photo PDF takes longer. The live time left is shown while it scans.</div>
     </div>
   </section>
 
@@ -1631,6 +1633,21 @@
     return "BSN_" + sem + "_" + batch + "_" + ses + marker + "_" + reg;
   }
 
+  // FIX 2026-11-15f: pass percentage + grading, from the full-PDF analysis.
+  function passPct(it){
+    var a = parseInt(it.appeared, 10), p = parseInt(it.passed, 10);
+    if (!a || a <= 0 || isNaN(p) || p < 0 || p > a) return null;
+    return Math.round((p / a) * 100);
+  }
+  function findGrading(text){
+    // "old Grading" / "new Grading" — written in many of his file names
+    // (e.g. "Result BSN 3rd Fall25(old Grading) MKD.pdf"); the grading
+    // system matters for GPA, so it is shown as a tag when it is known.
+    if (/old\s+grading/i.test(text)) return "Old Grading";
+    if (/new\s+grading/i.test(text)) return "New Grading";
+    return null;
+  }
+
   function parseFromText(text, fileName){
     // FIX 2026-11-15b: file names join words with "_" — treat them as spaces
     // so "BSN_4TH_22-26_KOHAT" reads the same as "BSN 4TH 22-26 KOHAT".
@@ -1661,6 +1678,7 @@
     rec.examStart = ex.start;
     rec.examEnd = ex.end;
     rec.creditHours = findCreditHours(text);
+    rec.grading = findGrading(text);
     rec.part = findPart(text);
     rec.revised = isRevised(text);
     return rec;
@@ -1750,6 +1768,7 @@
       appeared: fromContent.appeared || null,
       passed: fromContent.passed || null,
       creditHours: fromContent.creditHours || fromName.creditHours || null,
+      grading: fromContent.grading || fromName.grading || null,
       part: fromName.part || fromContent.part || null,
       revised: !!(fromName.revised || fromContent.revised),
       examStart: fromContent.examStart || null,
@@ -1863,6 +1882,7 @@
     if (!rec.passed && p.passed) rec.passed = p.passed;
     if (!rec.examStart && p.examStart) { rec.examStart = p.examStart; rec.examEnd = p.examEnd; }
     if (!rec.creditHours && p.creditHours) rec.creditHours = p.creditHours;
+    if (!rec.grading && p.grading) rec.grading = p.grading;
     if (!rec.hasRD && /regional\s+director/i.test(text)) rec.hasRD = true;
     if (got || text.trim().length > 60) rec.ocrOk = true;
     finalizeRecord(rec);
@@ -2183,6 +2203,7 @@
       var tags = "";
       if (it.dupe) tags += ' <span class="tag tag-dupe">DUPLICATE? — ' + esc(it.dupeKind) + '</span>';
       if (it.known) tags += ' <span class="tag tag-known">In your known list</span>';
+      if (it.grading) tags += ' <span class="tag tag-ok">' + esc(it.grading) + '</span>';
       if (it.ocrOk) tags += ' <span class="tag tag-ocr">Read by OCR</span>';
       tags += it.check
         ? ' <span class="tag tag-check">' + esc(it.check) + '</span>'
@@ -2207,10 +2228,10 @@
         + '<span>Exam dates: ' + fieldOrCheck(it.examDates) + '</span>'
         + '<span>Notification / Result No: ' + fieldOrCheck(it.notifNo) + '</span>'
         + '<span>Appeared: ' + fieldOrCheck(it.appeared) + '</span>'
-        + '<span>Passed: ' + fieldOrCheck(it.passed) + '</span>'
+        + '<span>Passed: ' + (passPct(it) != null ? '<b>' + esc(it.passed) + ' / ' + esc(it.appeared) + ' (' + passPct(it) + '%)</b>' : fieldOrCheck(it.passed)) + '</span>'
         + '<span>University: ' + fieldOrCheck(it.university) + '</span>'
         + '<span>Credit hours: ' + (it.creditHours ? '<b>' + it.creditHours + '</b>' : '<span class="miss">— not on the page</span>') + '</span>'
-        + (it.part ? '<span>Part: <b>' + it.part + '</b></span>' : '')
+        + (it.grading ? '<span>Grading: <b>' + esc(it.grading) + '</b></span>' : '')        + (it.part ? '<span>Part: <b>' + it.part + '</b></span>' : '')
         + (it.revised ? '<span><b>Revised version</b></span>' : '')
         + '<span>Regional Director sign: <b>' + (it.hasRD ? "Found in the PDF" : "Not seen") + '</b></span>'
         + '<span>Read from: <b>' + (it.readOk ? "Inside the PDF (first 10 pages)" : (it.ocrOk ? "OCR — first 10 pages of the photo" : "File name only — no readable text inside")) + '</b></span>'
@@ -2242,6 +2263,8 @@
     s += "\n      In simple words: " + plainLine(it);
     s += "\n      New name: " + suggestedName(it) + " (? means that part is missing)";
     if (it.creditHours) s += "\n      Credit hours: " + it.creditHours;
+    if (it.grading) s += "\n      Grading: " + it.grading;
+    var pp = passPct(it); if (pp != null) s += "\n      Pass: " + pp + "% (" + it.passed + " of " + it.appeared + " students)";
     if (it.known) s += "\n      This result is already in your known list of 181 results.";
     if (it.guess) s += "\n      Best guess: " + guessText(it.guess) + " (a guess only — please check)";
     return s;
@@ -2297,11 +2320,11 @@
 
   function csvCell(v){ return '"' + String(v == null ? "" : v).replace(/"/g,'""') + '"'; }
   function buildCsv(){
-    var rows = [["No","Year","Region","Program","Semester","Session","Type","Result Date","Exam Dates","Notification / Result No","Appeared","Passed","University","Pages","Size","Batch","Batch From","Folder Location","Folder","File Name","Suggested New Name","Read From","Duplicate?","Duplicate Detail","Note","In Simple Words","Credit Hours","Regional Director Sign","Read By OCR","In Your Known List","Best Guess","Part","Revised"]];
+    var rows = [["No","Year","Region","Program","Semester","Session","Type","Result Date","Exam Dates","Notification / Result No","Appeared","Passed","Pass %","Grading","University","Pages","Size","Batch","Batch From","Folder Location","Folder","File Name","Suggested New Name","Read From","Duplicate?","Duplicate Detail","Note","In Simple Words","Credit Hours","Regional Director Sign","Read By OCR","In Your Known List","Best Guess","Part","Revised"]];
     var csvList = currentShown.length ? currentShown : sortedItems();
     csvList.forEach(function(it, i){
       rows.push([i+1, it.year || "No date", it.region, it.program || "CHECK", semDisplay(it), it.session, it.examType, it.date,
-                 it.examDates || "CHECK", it.notifNo || "CHECK", it.appeared || "CHECK", it.passed || "CHECK", it.university || "CHECK",
+                 it.examDates || "CHECK", it.notifNo || "CHECK", it.appeared || "CHECK", it.passed || "CHECK", (passPct(it) != null ? passPct(it) + "%" : ""), it.grading || "", it.university || "CHECK",
                  it.pages || "", it.size, it.batch, it.batchHow, it.path, it.folder, it.fileName, suggestedName(it),
                  it.readOk ? "Inside PDF (first 10 pages)" : (it.ocrOk ? "OCR (first 10 pages)" : "File name only"), it.dupe ? "DUPLICATE?" : "", it.dupe || "", it.check || "",
                  plainLine(it), it.creditHours || "", it.hasRD ? "Found" : "Not seen", it.ocrOk ? "Yes" : "", it.known ? "Yes" : "", guessText(it.guess), it.part || "", it.revised ? "Yes" : ""]);
@@ -2456,12 +2479,12 @@
        + " &nbsp;|&nbsp; <b>Need a check:</b> " + chkN
        + " &nbsp;|&nbsp; <b>Other (non-PDF) files:</b> " + otherCount + "</p>";
     h += "<h3>Main list — each result counted once</h3>";
-    h += '<div class="report-scroll"><table><thead><tr><th>No</th><th>Year</th><th>Region</th><th>Program</th><th>Sem</th><th>Session</th><th>Type</th><th>Result date</th><th>Exam dates</th><th>Notif. No</th><th>Appeared</th><th>Passed</th><th>Batch</th><th>Pages</th><th>Folder location</th><th>File</th><th>New name</th><th>Note</th></tr></thead><tbody>';
+    h += '<div class="report-scroll"><table><thead><tr><th>No</th><th>Year</th><th>Region</th><th>Program</th><th>Sem</th><th>Session</th><th>Type</th><th>Result date</th><th>Exam dates</th><th>Notif. No</th><th>Appeared</th><th>Passed</th><th>Pass %</th><th>Grading</th><th>Batch</th><th>Pages</th><th>Folder location</th><th>File</th><th>New name</th><th>Note</th></tr></thead><tbody>';
     main.forEach(function(it, i){
       h += "<tr><td>" + (i+1) + "</td><td>" + esc(it.year || "No date") + "</td><td>" + esc(it.region) + "</td><td>"
         + esc(it.program || "CHECK") + "</td><td>" + esc(semDisplay(it)) + "</td><td>" + esc(it.session) + "</td><td>"
         + esc(it.examType) + "</td><td>" + esc(it.date) + "</td><td>" + esc(it.examDates || "CHECK") + "</td><td>"
-        + esc(it.notifNo || "CHECK") + "</td><td>" + esc(it.appeared || "CHECK") + "</td><td>" + esc(it.passed || "CHECK") + "</td><td>"
+        + esc(it.notifNo || "CHECK") + "</td><td>" + esc(it.appeared || "CHECK") + "</td><td>" + esc(it.passed || "CHECK") + "</td><td>" + (passPct(it) != null ? passPct(it) + "%" : "—") + "</td><td>" + esc(it.grading || "—") + "</td><td>"
         + esc(it.batch) + "</td><td>" + esc(it.pages || "—") + "</td><td>" + esc(it.path) + "</td><td>" + esc(it.fileName) + "</td><td>" + esc(suggestedName(it)) + "</td><td>"
         + esc([it.check, it.known ? "In your known list" : "", it.ocrOk ? "Read by OCR" : "", (it.readOk || it.ocrOk) ? "" : "File name only", it.guess ? ("Best guess: " + guessText(it.guess)) : "", (it.creditHours ? ("Credit hours: " + it.creditHours) : ""), plainLine(it)].filter(Boolean).join(" · ")) + "</td></tr>";
     });
