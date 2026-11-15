@@ -21,10 +21,13 @@ import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
+
+import androidx.webkit.WebViewAssetLoader;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -51,6 +54,13 @@ import java.util.List;
  * To update the scanner: replace ONE file,
  * app/src/main/assets/kmu-results-scanner.html, with the new exported HTML
  * (same name, same place). Nothing else in the app has to change.
+ *
+ * FIX 2026-11-16b: the page is served over a real https origin from the
+ * app's own files (WebViewAssetLoader), so pdf.js and Tesseract.js load
+ * from inside the app and the scanner works fully offline. The library
+ * files (pdf.min.js, pdf.worker.min.js, tesseract.min.js, worker.min.js,
+ * the 8 core files and eng.traineddata.gz) live in app/src/main/assets/
+ * next to the HTML.
  */
 public class MainActivity extends Activity {
 
@@ -121,15 +131,31 @@ public class MainActivity extends Activity {
         s.setAllowContentAccess(true);
         s.setBuiltInZoomControls(false);
 
+        // FIX 2026-11-16b: serve the scanner over a real https origin from
+        // the app's own files (WebViewAssetLoader), so the photo reader
+        // (pdf.js + Tesseract.js, bundled inside the app) can start its
+        // workers and load its files — a file:// page cannot do that — and
+        // the scanner works fully offline, with no internet at all.
+        final WebViewAssetLoader assetLoader = new WebViewAssetLoader.Builder()
+                .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
+                .build();
+
         webView.addJavascriptInterface(new DownloadBridge(), "KmuBridge");
         webView.addJavascriptInterface(new ScanBridge(), "ScanBridge");
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                // Serve the app's own files (HTML + the bundled photo-reader
+                // libraries) over the https origin below.
+                return assetLoader.shouldInterceptRequest(request.getUrl());
+            }
+
+            @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
                 // Keep the scanner itself inside the app; anything else opens in the browser.
-                if ("file".equals(uri.getScheme())) return false;
+                if ("https".equals(uri.getScheme()) && "appassets.androidplatform.net".equals(uri.getHost())) return false;
                 try {
                     startActivity(new Intent(Intent.ACTION_VIEW, uri));
                 } catch (Exception ignored) {
@@ -168,7 +194,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        webView.loadUrl("file:///android_asset/kmu-results-scanner.html");
+        webView.loadUrl("https://appassets.androidplatform.net/assets/kmu-results-scanner.html");
     }
 
     @Override
