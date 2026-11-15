@@ -11,9 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="KMU Scanner" />
 <link rel="icon" href="data:," />
 <title>KMU Results Scanner</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <!-- FIX 2026-11-16b: no web font — the app works fully offline, so it uses the phone's own font (Roboto on Android). -->
 <style>
   /* ============================================================
      KMU Results Scanner — Neumorphism + Liquid Glass
@@ -707,8 +705,8 @@
 
 </main>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.5/dist/tesseract.min.js"></script>
+<script src="pdf.min.js"></script>
+<script src="tesseract.min.js"></script>
 <script>
 (function(){
   "use strict";
@@ -1903,32 +1901,52 @@
   // LAST page too — for a 130-page result that is page 130 — and the
   // Regional Director signature there is not needed: old results have no
   // RD, some new ones say "Director KMU IHS" instead, and some have no
-  // region in the signatures at all. Both libraries load from the internet
-  // once; if they cannot load, the file falls back to its file name and the
-  // report says so plainly.
+  // region in the signatures at all. Both libraries are bundled inside the
+  // app (offline); if they cannot load, the file falls back to its file name
+  // and the report says so plainly.
   function withTimeout(p, ms){
     return Promise.race([p, new Promise(function(res){ setTimeout(function(){ res(null); }, ms); })]);
   }
-  // FIX 2026-11-15g: the photo reader (Tesseract) downloads its engine
-  // from the internet once. On a slow connection that download can hang
-  // forever — and the scan sat at file 1, 0%, with no sign of it. Now the
-  // download gets 90 seconds: if it cannot load in that time, the file is
-  // read from its name only and the scan moves on (the finish message says
-  // the reader needs internet once). ocrWorkerState tells the progress
-  // line what is happening, so a slow download is visible, not a stuck 0%.
+  // FIX 2026-11-16b: the photo reader lives INSIDE the app now — pdf.js
+  // and Tesseract.js are bundled files served from the app itself, so OCR
+  // works fully offline (no Wi-Fi, no mobile data). The local files are
+  // tried first; if they cannot load for any reason, the internet copies
+  // are tried instead (the old way), so the scan still works when online.
+  // FIX 2026-11-15g: the reader gets 90 seconds: if it cannot load in that
+  // time, the file is read from its name only and the scan moves on.
+  // ocrWorkerState tells the progress line what is happening, so a slow
+  // start is visible, not a stuck 0%.
   var ocrWorkerP = null, ocrFailed = false, ocrWorkerState = "idle"; // idle | loading | ready | failed
+  var ocrLocal = false; // true when the bundled (offline) reader is running
   function ocrAvailable(){ return !!(window.Tesseract && window.pdfjsLib) && !ocrFailed; }
   function getOcrWorker(){
     if (!window.Tesseract) return Promise.resolve(null);
-    if (!ocrWorkerP) {
-      ocrWorkerState = "loading";
-      ocrWorkerP = withTimeout(window.Tesseract.createWorker("eng"), 90000)
-        .then(function(w){
-          if (!w) { ocrFailed = true; ocrWorkerState = "failed"; return null; }
-          ocrWorkerState = "ready"; return w;
-        })
-        .catch(function(){ ocrFailed = true; ocrWorkerState = "failed"; return null; });
+    if (ocrWorkerP) return ocrWorkerP;
+    if (ocrFailed) return Promise.resolve(null);
+    ocrWorkerState = "loading";
+    function tryLocal(){
+      try {
+        return withTimeout(window.Tesseract.createWorker("eng", 1, {
+          workerPath: "worker.min.js",
+          corePath: "./",
+          langPath: "./"
+        }), 90000);
+      } catch(e) { return Promise.resolve(null); }
     }
+    function tryCdn(){
+      try {
+        return withTimeout(window.Tesseract.createWorker("eng"), 90000);
+      } catch(e) { return Promise.resolve(null); }
+    }
+    ocrWorkerP = tryLocal().then(function(w){
+      if (w) { ocrLocal = true; ocrWorkerState = "ready"; return w; }
+      return tryCdn().then(function(w2){
+        if (w2) { ocrWorkerState = "ready"; return w2; }
+        ocrFailed = true; ocrWorkerState = "failed"; return null;
+      });
+    }).catch(function(){
+      ocrFailed = true; ocrWorkerState = "failed"; return null;
+    });
     return ocrWorkerP;
   }
   function ocrCanvasText(canvas){
@@ -1966,7 +1984,7 @@
     if (!ocrAvailable()) return Promise.resolve(rec);
     return file.arrayBuffer().then(function(buf){
       if (window.pdfjsLib.GlobalWorkerOptions && !window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = "pdf.worker.min.js";
       }
       return window.pdfjsLib.getDocument({ data: buf }).promise;
     }).then(function(pdf){
@@ -2305,7 +2323,7 @@
       var f = it.file, rec = it.rec;
       var pct = Math.round((doneCount / Math.max(1, roundFiles)) * 100);
       if (ocrWorkerState !== "ready") {
-        setProgress(pct, '<span class="pct">' + pct + '%</span> Getting the photo reader ready — it downloads once from the internet. If your internet is slow, this takes a while. Photo ' + (i+1) + " of " + photoList.length + ": " + esc(f.name));
+        setProgress(pct, '<span class="pct">' + pct + '%</span> Getting the photo reader ready — this takes a while the first time. Photo ' + (i+1) + " of " + photoList.length + ": " + esc(f.name));
       } else {
         setProgress(pct, '<span class="pct">' + pct + '%</span> Photo ' + (i+1) + " of " + photoList.length + " — reading the photo with OCR (first 10 pages, stops early when it is found). This one takes a little longer: " + esc(f.name) + " — about " + fmtDur(timeLeft(doneCount)) + " left.");
       }
@@ -2336,7 +2354,7 @@
         + newInRound + " new file(s) in this round."
         + (savedCount ? " " + savedCount + " file(s) were already saved from before." : "")
         + (ocrN ? " " + ocrN + " photo PDF(s) were read with OCR." : "")
-        + (photoLeft && !ocrAvailable() ? " " + photoLeft + " photo PDF(s) could not be read this time: the OCR reader needs an internet connection once to load. Connect once, scan again, and those will be read from the photo itself." : "")
+        + (photoLeft && !ocrAvailable() ? " " + photoLeft + " photo PDF(s) could not be read this time: the photo reader inside the app could not start. Connect to the internet once and scan again, and those will be read from the photo itself." : "")
         + (cloned ? " " + cloned + " same-file copy(ies) flagged." : "")
         + (others ? " " + others + " other file(s) counted." : "")
         + (dc ? " " + dc + " possible duplicate(s) found — see the red box below." : " No duplicates found.")
