@@ -391,6 +391,42 @@
   }
   .toolbar input[type="search"]::placeholder{color:var(--ink2);}
 
+  /* ---------- FIX 2026-11-15e: TA Series, region picker, tabs, fun cards ---------- */
+  .ta{font-size:12px; font-weight:800; letter-spacing:.22em; text-transform:uppercase; color:var(--acc); margin:2px 0 0;}
+  .region-pick{margin-top:16px; border-top:1px solid var(--line); padding-top:14px;}
+  .region-pick-lbl{font-size:12px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--ink2);}
+  .region-pick-chips{display:flex; flex-wrap:wrap; gap:8px; margin:9px 0 6px;}
+  .rpick{
+    border:1px solid var(--card-brd); background:var(--bg); color:var(--ink);
+    border-radius:999px; padding:7px 14px; font:inherit; font-size:13.5px; font-weight:700;
+    box-shadow:var(--neu-sh-sm); cursor:pointer;
+  }
+  .rpick.on{background:linear-gradient(135deg, var(--acc-bright), var(--acc-deep)); color:#fff; border-color:transparent;}
+  .region-pick-note{font-size:13px; color:var(--ink2);}
+  .tabs{display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 4px;}
+  .tab{
+    border:1px solid var(--card-brd); background:var(--bg); color:var(--ink);
+    border-radius:999px; padding:7px 14px; font:inherit; font-size:13.5px; font-weight:700;
+    font-family:"IBM Plex Mono",monospace; box-shadow:var(--neu-sh-sm); cursor:pointer;
+  }
+  .tab.on{background:linear-gradient(135deg, var(--acc-bright), var(--acc-deep)); color:#fff; border-color:transparent; animation:tabPop .35s cubic-bezier(.2,.8,.3,1.4) both;}
+  @keyframes tabPop{ from{transform:scale(.92);} to{transform:scale(1);} }
+  .skipbox{display:none; border-radius:22px; padding:20px; margin:28px 0 0; background:var(--glass-bar); border:1px solid var(--glass-brd); box-shadow:var(--glass-sh);}
+  .skipbox.on{display:block; animation:fadeUp .4s ease both;}
+  .skipbox h2{font-size:16px; margin:0 0 6px; color:var(--ink);}
+  .skipbox .skipnote{font-size:13.5px; color:var(--ink2); margin:0 0 10px;}
+  .skipbox ul{list-style:none; margin:0; padding:0;}
+  .skipbox li{margin:0 0 10px; font-size:14px;}
+  .newname{margin-top:10px; background:var(--well); border-radius:12px; padding:8px 11px; font-size:13.5px; box-shadow:var(--neu-in); position:relative; z-index:1;}
+  .newname-btn{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:13px; font-weight:700; color:var(--acc-deep);
+    background:var(--acc-soft); border:1px solid var(--acc); border-radius:8px; padding:3px 8px;
+    cursor:pointer; word-break:break-all; text-align:left;
+  }
+  .newname-hint{color:var(--ink2); font-size:12px;}
+  @keyframes cardIn{ from{opacity:0; transform:translateY(16px) scale(.985);} to{opacity:1; transform:none;} }
+  @media (prefers-reduced-motion: reduce){ .item,.chip,.stat,.group-head,.region-head,.tab{animation:none !important;} }
+
   /* ---------- results ---------- */
   .group{margin:28px 0 0;}
   .group-head{
@@ -420,7 +456,7 @@
     position:relative; overflow:hidden;
     background:var(--bg); border:1px solid var(--card-brd); border-radius:20px;
     padding:14px 16px; margin:0 0 12px; box-shadow:var(--neu-sh-sm);
-    animation:riseIn .55s cubic-bezier(.2,.8,.3,1) both; animation-delay:var(--d,0ms);
+    animation:cardIn .38s cubic-bezier(.16,1,.3,1) both; animation-delay:var(--d,0ms);
   }
   .item::after{
     content:attr(data-sem); position:absolute; right:8px; top:-16px;
@@ -543,6 +579,7 @@
     <div class="hero-text">
       <h1>KMU Results <span class="thin">Scanner</span></h1>
       <p class="uni">KHYBER MEDICAL UNIVERSITY</p>
+      <p class="ta">Arrange by TA Series</p>
     </div>
     <button type="button" class="theme-toggle" id="themeToggle" aria-label="Switch between light and dark look">
       <svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13.2A8.2 8.2 0 1 1 10.8 4 6.6 6.6 0 0 0 20 13.2Z"/></svg>
@@ -564,6 +601,19 @@
       <label class="file-control"><span class="fc-title">Pick many files</span>
         <input type="file" id="filesInput" accept="application/pdf,.pdf" multiple />
       </label>
+    </div>
+    <div class="region-pick" id="regionPick" aria-label="Choose one region to scan">
+      <div class="region-pick-lbl">Scan one region</div>
+      <div class="region-pick-chips">
+        <button type="button" class="rpick on" data-region="">All regions</button>
+        <button type="button" class="rpick" data-region="Hazara">Hazara</button>
+        <button type="button" class="rpick" data-region="Kohat">Kohat</button>
+        <button type="button" class="rpick" data-region="Malakand">Malakand</button>
+        <button type="button" class="rpick" data-region="Mardan">Mardan</button>
+        <button type="button" class="rpick" data-region="Peshawar">Peshawar</button>
+        <button type="button" class="rpick" data-region="All Region">All Region</button>
+      </div>
+      <div class="region-pick-note">Pick Mardan and only Mardan results are read — the rest are listed separately, not read. Pick All regions to read everything.</div>
     </div>
   </section>
 
@@ -592,7 +642,7 @@
       <div class="stat" style="--d:420ms"><div class="big" id="statOther" data-v="0">0</div><div class="lbl">Other files (not PDFs)</div></div>
     </div>
     <div class="toolbar">
-      <input type="search" id="searchInput" placeholder="Search the results — college name, region, semester, file name…" aria-label="Search the scanned results" />
+      <input type="search" id="searchInput" placeholder="Search the results — region, semester, file name…" aria-label="Search the scanned results" />
     </div>
     <div class="chip-lbl">Year</div>
     <div class="chips" id="chipsYear"></div>
@@ -600,6 +650,8 @@
     <div class="chips" id="chipsRegion"></div>
     <div class="chip-lbl">Exam type</div>
     <div class="chips" id="chipsType"></div>
+    <div class="chip-lbl">Region list — tap a region to see only its results</div>
+    <div class="tabs" id="regionTabs"></div>
   </section>
 
   <section class="dupbox" id="dupBox" aria-live="polite">
@@ -610,6 +662,12 @@
   <section class="unknownbox" id="unknownBox" aria-live="polite">
     <h2>Unknown results — best guesses</h2>
     <ul id="unknownList"></ul>
+  </section>
+
+  <section class="skipbox" id="skipBox" aria-live="polite">
+    <h2>Other regions — skipped in this scan</h2>
+    <p class="skipnote">These files are from other regions, so they were not read in this scan. Scan again with All regions to read them.</p>
+    <ul id="skipList"></ul>
   </section>
 
   <div id="results"></div>
@@ -629,6 +687,7 @@
       <button type="button" class="btn-ghost btn-small" id="dlTxtBtn">Download list (.txt)</button>
       <button type="button" class="btn-ghost btn-small" id="dlCsvBtn">Download sheet (.csv)</button>
       <button type="button" class="btn-ghost btn-small" id="dlHtmlBtn">Download full report (.html)</button>
+      <button type="button" class="btn-ghost btn-small" id="dlRenameBtn">Download rename plan (.csv)</button>
       <button type="button" class="btn-ghost btn-small" id="reportBtn">Open printable report</button>
     </div>
     <div class="msg" id="copyMsg" aria-live="polite"></div>
@@ -840,18 +899,49 @@
     }
     return tokens;
   }
+  // FIX 2026-11-15d: position-aware separators. The old code put a newline
+  // after EVERY Td/Tm/ET, but some PDFs draw text one character at a time,
+  // each in its own BT/ET block with its own Tm — so "KHYBER" came out as
+  // "K\nH\nY\nB\nE\nR" and no field could be read. Now the separator is
+  // decided from the real position: a big vertical move is a new line, a
+  // horizontal move clearly wider than the last word is a word gap, and a
+  // small move (the next character) is no separator at all. ET alone still
+  // asks for a newline, but the next Tm overwrites it with the real answer.
   function textFromContent(content, nameToCmap, fallbackCmap){
     var tokens = tokenizeContent(content);
-    var out = "", stack = [], curCmap = null, needSep = false;
+    var out = "", stack = [], curCmap = null, needSep = "";
+    var fontSize = 0, tmA = 1, tmD = 1, lastX = 0, lastY = 0, hasPos = false;
+    var lastStrLen = 0, lastWasText = false, leading = 0;
+    function fontHeight(){ return fontSize > 0 ? Math.abs(tmD) * fontSize : 11; }
+    function decideSep(dx, dy){
+      var h = fontHeight();
+      if (Math.abs(dy) > h * 0.5) return "\n";
+      if (!lastWasText || dx <= 0) return "";
+      var gap = dx - 0.5 * h * lastStrLen;
+      // FIX 2026-11-15d: the threshold was 0.15 x font height, but a wide
+      // letter (M, W) in the All Region file has an advance of 0.65 x the
+      // height, so its gap is 0.15 x — a false space inside the word
+      // ("M EDICAL", "BS N U RISN G"). A real word gap is 0.28 x or more,
+      // so 0.20 x separates them.
+      if (gap > 0.20 * h) return " ";
+      return "";
+    }
     function appendText(s){
       if (!s) return;
-      if (needSep && out && !/\s$/.test(out)) out += "\n";
-      needSep = false;
+      if (needSep && out && !/\s$/.test(out)) out += needSep;
+      needSep = "";
       out += s;
+      lastStrLen = s.length;
+      lastWasText = true;
     }
     function lastOf(types){
       for (var s = stack.length - 1; s >= 0; s--) if (types.indexOf(stack[s].t) >= 0) return stack[s];
       return null;
+    }
+    function nums(n){
+      var arr = [];
+      for (var s = stack.length - 1; s >= 0 && arr.length < n; s--) if (stack[s].t === "num") arr.unshift(stack[s].v);
+      return arr;
     }
     for (var ti = 0; ti < tokens.length; ti++) {
       var tk = tokens[ti];
@@ -865,10 +955,42 @@
       var op = tk.v;
       if (op === "Tf") {
         var nameTok = lastOf(["name"]);
+        var sizeTok = lastOf(["num"]);
+        if (sizeTok) fontSize = sizeTok.v;
         curCmap = (nameTok && nameToCmap[nameTok.v]) || fallbackCmap || null;
+      } else if (op === "Tm") {
+        var m = nums(6);
+        if (m.length === 6) {
+          tmA = Math.abs(m[0]) || 1; tmD = Math.abs(m[3]) || 1;
+          if (hasPos) needSep = decideSep(m[4] - lastX, m[5] - lastY);
+          lastX = m[4]; lastY = m[5]; hasPos = true; lastWasText = false;
+        }
+      } else if (op === "TL") {
+        var lv = lastOf(["num"]);
+        if (lv) leading = lv.v;
+      } else if (op === "Td" || op === "TD") {
+        var mv = nums(2);
+        if (mv.length === 2) {
+          if (op === "TD") leading = -mv[1];
+          var dxp = mv[0] * tmA, dyp = mv[1] * tmD;
+          if (hasPos) needSep = decideSep(dxp, dyp);
+          lastX += dxp; lastY += dyp; hasPos = true; lastWasText = false;
+        }
+      } else if (op === "T*") {
+        // Next line by the leading. If the leading is 0 (as in the
+        // All Region file, where "'" draws each character) it is no move
+        // at all, so decideSep correctly says "same line".
+        if (hasPos) needSep = decideSep(0, -leading * tmD);
+        lastY += -leading * tmD; hasPos = true; lastWasText = false;
+      } else if (op === "ET") {
+        needSep = "\n";
       } else if (op === "Tj" || op === "'" || op === '"') {
+        // "'" and '"' are "move to the next line, then show the text".
+        // With a leading of 0 they do not move at all — the All Region
+        // file draws every header character with "'", so forcing a newline
+        // here shattered "KHYBER" into "K\nH\nY\nB\nE\nR".
+        if (op !== "Tj" && hasPos) needSep = decideSep(0, -leading * tmD);
         var st = lastOf(["str","hex"]);
-        if (op !== "Tj") needSep = true;
         if (st) appendText(st.t === "hex" ? decodeBytesWithCmap(st.v, curCmap) : decodeStrWithCmap(st.v, curCmap));
       } else if (op === "TJ") {
         var arrTok = lastOf(["arr"]);
@@ -880,12 +1002,31 @@
             else if (el.t === "num" && el.v <= -180 && out && !/\s$/.test(out)) out += " ";
           }
         }
-      } else if (op === "Td" || op === "TD" || op === "Tm" || op === "T*" || op === "ET") {
-        needSep = true;
       }
       stack = [];
     }
     return out;
+  }
+  // FIX 2026-11-15d: some PDFs draw text one character at a time, so the
+  // reader puts a newline after every character ("K\nH\nY\nB\nE\nR") and no
+  // field can be read — "Semester: 1st (Fall 2023)" becomes "S e m e s t e r
+  // : 1 s t". Join runs of single-character lines back into words. A run
+  // must be at least 4 characters long, so a short column of single letters
+  // (grades, list marks) is left alone. The space between words survives
+  // because the space itself is drawn as a one-character line.
+  function deshatter(text){
+    var lines = (text || "").split("\n");
+    var out = [], run = "";
+    function flush(){ if (run) { out.push(run); run = ""; } }
+    for (var i = 0; i < lines.length; i++) {
+      var L = lines[i];
+      if (L.length === 1) { run += L; continue; }
+      if (run.length >= 4) { out.push(run); run = ""; out.push(L); }
+      else { if (run) { for (var j = 0; j < run.length; j++) out.push(run.charAt(j)); run = ""; } out.push(L); }
+    }
+    if (run.length >= 4) out.push(run);
+    else if (run) { for (var k = 0; k < run.length; k++) out.push(run.charAt(k)); }
+    return out.join("\n");
   }
   function readPdfInside(buf){
     // Returns a Promise for {text, pages} using only code in this page.
@@ -907,12 +1048,32 @@
       if (eIdx < 0) break;
       var dictStart = Math.max(whole.lastIndexOf("<<", sIdx), sIdx - 400);
       var dict = whole.slice(dictStart, sIdx);
+      // FIX 2026-11-15d: skip streams that are not page content. A PDF's
+      // first streams are often huge embedded FONT files (their dict has
+      // /Length1) and photos (/Subtype /Image). Inflating them wastes time,
+      // and their random binary bytes happen to contain "BT" and "Tj", so
+      // the old code counted them as text streams and never reached the real
+      // content streams — a 454-page text PDF read as 0 characters. A real
+      // stream dict always has /Length; a "stream" found inside binary data
+      // does not, so that is the second guard.
+      if (/\/Length1|\/FontFile|\/Subtype\s*\/(Image|ImageXObject|XML)|\/Type\s*\/ObjStm/.test(dict)) { pos = eIdx + 9; continue; }
+      if (!/\/Length\s+\d/.test(dict)) { pos = eIdx + 9; continue; }
       var dataStart = sIdx + 6;
       if (whole.charAt(dataStart) === "\r" && whole.charAt(dataStart + 1) === "\n") dataStart += 2;
       else if (whole.charAt(dataStart) === "\n" || whole.charAt(dataStart) === "\r") dataStart += 1;
-      var dataEnd = eIdx;
-      if (dataEnd > dataStart && (whole.charAt(dataEnd - 1) === "\n" || whole.charAt(dataEnd - 1) === "\r")) dataEnd--;
-      if (dataEnd > dataStart + 1 && whole.charAt(dataEnd - 2) === "\r" && whole.charAt(dataEnd - 1) === "\n") dataEnd--;
+      // FIX 2026-11-15d: use the dict's /Length when it is a direct number
+      // — it is the exact stream length. The old trimming left one stray
+      // "\r" at the end of a "\r\n" ending, and DecompressionStream fails
+      // on that trailing byte (Node's zlib tolerates it, the browser does
+      // not), so a whole 454-page text PDF read as 0 characters. A /Length
+      // that is an indirect reference ("/Length 45 0 R") is not a length.
+      var lenM = /\/Length\s+(\d+)(?!\s+\d+\s+R)/.exec(dict);
+      var dataEnd;
+      if (lenM) dataEnd = Math.min(dataStart + parseInt(lenM[1], 10), eIdx);
+      else {
+        dataEnd = eIdx;
+        while (dataEnd > dataStart && (whole.charAt(dataEnd - 1) === "\n" || whole.charAt(dataEnd - 1) === "\r")) dataEnd--;
+      }
       var objNum = null;
       var head = whole.slice(Math.max(0, sIdx - 700), sIdx);
       var objRe = /(\d+)\s+\d+\s+obj/g, om, lastObj = null;
@@ -963,12 +1124,17 @@
       var cmapList = Object.keys(cmapByObj).map(function(k){ return cmapByObj[k]; });
       var fallbackCmap = cmapList.length === 1 ? cmapList[0] : null;
       // Pass 3: decode the content streams in file order.
+      // FIX 2026-11-15b: FIRST 10 PAGES ONLY. The first 12 text-bearing
+      // streams are about the first 10 pages (one content stream per page,
+      // plus a couple of shared ones). The identity is on page 1.
       var texts = [];
+      var textStreams = 0;
       streamTexts.forEach(function(st){
+        if (textStreams >= 12) return;
         if (st.text.indexOf("begincmap") >= 0) return;
-        if (/BT|Tj|TJ|Tf/.test(st.text)) texts.push(textFromContent(st.text, nameToCmap, fallbackCmap));
+        if (/BT|Tj|TJ|Tf/.test(st.text)) { texts.push(textFromContent(st.text, nameToCmap, fallbackCmap)); textStreams++; }
       });
-      return { text: texts.join(" \n "), pages: pages };
+      return { text: deshatter(texts.join(" \n ")), pages: pages };
     }).catch(function(){ return { text: "", pages: pages }; });
   }
 
@@ -1004,7 +1170,16 @@
       var k = KNOWN[i];
       if (normRegionName(k.region) !== reg) continue;
       if (k.sem !== it.semester) continue;
-      if (k.session && it.session !== k.session) continue;
+      // FIX 2026-11-15c: compare the session NAME only (Spring/Fall/...),
+      // not the year. A 2nd-semester exam sat in Spring 2024 can be
+      // announced in 2025, so the inside text says "Spring 2024" while the
+      // known list says "Spring 2025" — same exam, same result. The year is
+      // checked separately below (announcement year).
+      if (k.session && it.session && it.session !== "—") {
+        var kS = (k.session.match(/spring|fall|summer|winter/i) || [""])[0].toLowerCase();
+        var iS = (it.session.match(/spring|fall|summer|winter/i) || [""])[0].toLowerCase();
+        if (kS && iS && kS !== iS) continue;
+      }
       if (k.type && it.examType !== k.type) continue;
       if (k.year && it.year && it.year !== k.year) continue;
       if (k.year && !it.year && k.session && it.session === "—") continue;
@@ -1039,7 +1214,7 @@
     setTimeout(function(){ folderInput.click(); }, 450);
   });
   document.getElementById("clearBtn").addEventListener("click", function(){
-    items = []; otherCount = 0; seenKeys = {};
+    items = []; otherCount = 0; seenKeys = {}; skippedOther = []; activeRegionTab = "All";
     filterText = ""; document.getElementById("searchInput").value = "";
     uploadBox.classList.remove("on", "done");
     render(); copyMsg.textContent = "";
@@ -1088,7 +1263,8 @@
              "first":1,"second":2,"third":3,"fourth":4,"fifth":5,"sixth":6,"seventh":7,"eighth":8};
   function findSemester(text){
     var t = " " + text.toLowerCase().replace(/\s+/g," ") + " ";
-    var m = t.match(/\b(1st|2nd|3rd|4th|5th|6th|7th|8th|first|second|third|fourth|fifth|sixth|seventh|eighth)\s*(semester|sem)\b/);
+    // FIX 2026-11-15c: the Kohat header writes "SEEMESTER" (double E).
+    var m = t.match(/\b(1st|2nd|3rd|4th|5th|6th|7th|8th|first|second|third|fourth|fifth|sixth|seventh|eighth)\s*(semester|seemester|sem)\b/);
     if (m) return ORD[m[1]];
     m = t.match(/\bsemester\s*[-–]?\s*(1|2|3|4|5|6|7|8|i{1,3}v?|vi{0,3})\b/);
     if (m) {
@@ -1097,7 +1273,7 @@
       var roman = {"i":1,"ii":2,"iii":3,"iv":4,"v":5,"vi":6,"vii":7,"viii":8};
       return roman[v] || null;
     }
-    m = t.match(/\bsem\s*[-_. ]?\s*([1-8])\b/);
+    m = t.match(/\bsem\s*[-_. ]?\s*([1-8])(?:st|nd|rd|th)?\b/);
     if (m) return parseInt(m[1],10);
     m = t.match(/\bbsn\s*[- ]?([1-8])\b/);
     if (m) return parseInt(m[1],10);
@@ -1140,6 +1316,15 @@
   }
   function semLabel(n){ return n ? (n + (n===1?"st":n===2?"nd":n===3?"rd":"th")) : "— CHECK"; }
   function findRegion(text){
+    // FIX 2026-11-15b: the university header "KHYBER MEDICAL UNIVERSITY,
+    // PESHAWAR" is the university's city, NOT the result's region. Old
+    // All-Region results carry that header, so strip it before looking for
+    // a region — otherwise every old result is wrongly called Peshawar.
+    // The Regional Director signature is only a hint, never required: old
+    // results have no RD, some new ones say "Director KMU IHS <Region>"
+    // instead of "Regional Director", and some have no region in the
+    // signatures at all (Peshawar / UFM formats).
+    text = (text || "").replace(/khyber\s+medical\s+university[^\n\r]{0,60}/gi, " ");
     // 1) Signature rule: look near "Regional Director"
     var low = text.toLowerCase();
     var idx = low.lastIndexOf("regional director");
@@ -1150,6 +1335,14 @@
       }
       if (/swat/i.test(near)) return {region:"Malakand (Swat)", how:"signature"};
     }
+    // 1b) "Director KMU IHS <Region>" — the Mardan format (no "Regional" word).
+    var dIdx = low.lastIndexOf("director kmu ihs");
+    if (dIdx >= 0) {
+      var dNear = text.slice(Math.max(0, dIdx-40), dIdx+120);
+      for (var k=0;k<REGIONS.length;k++){
+        if (dNear.toLowerCase().indexOf(REGIONS[k].toLowerCase()) >= 0) return {region:REGIONS[k], how:"signature"};
+      }
+    }
     // 2) Whole text
     if (/\ball\s*regions?\b/i.test(text)) return {region:"All Regions", how:"content"};
     for (var j=0;j<REGIONS.length;j++){
@@ -1157,6 +1350,8 @@
     }
     if (/\bswat\b/i.test(text)) return {region:"Malakand (Swat)", how:"content"};
     if (/\bmkd\b/i.test(text)) return {region:"Malakand", how:"content"};
+    // Kurram college sits under IHS Kohat (seen in the real Kohat 4th file).
+    if (/\bkurram\b/i.test(text)) return {region:"Kohat", how:"content"};
     return null;
   }
   function findSession(text){
@@ -1166,12 +1361,36 @@
     if (m) { var yy = parseInt(m[2],10); if (yy >= 20 && yy <= 35) return {name: m[1].charAt(0).toUpperCase()+m[1].slice(1).toLowerCase(), year: 2000 + yy}; }
     m = text.match(/\b(20\d{2})\s*[- ]\s*(20\d{2})\b/);
     if (m) return {name:"Session", year: parseInt(m[2],10)};
+    // FIX 2026-11-15c: the arranged file names write the session as a short
+    // code — SP = Spring, FA = Fall, SU = Summer, WI = Winter — with no year
+    // next to it. The year then comes from the date or the batch.
+    m = text.match(/\b(SP|FA|SU|WI)\b/i);
+    if (m) {
+      var nm = {SP:"Spring", FA:"Fall", SU:"Summer", WI:"Winter"}[m[1].toUpperCase()];
+      return {name: nm, year: null};
+    }
     return null;
   }
   function findExamType(text, sessionName){
+    // FIX 2026-11-15c: only a UFM CASES file is Special ("PR Results UFM
+    // Cases"). A plain "UFM REVISED" file is the regular session result,
+    // revised for UFM students — the merged list keeps it as Spring. And
+    // "Unfair Means (UFM)" also appears inside a regular result, written
+    // across single students' rows (Peshawar 2nd file) — that does not make
+    // the whole file Special either.
+    if (/ufm\s*cases|pr\b.{0,30}ufm/i.test(text)) return "Special";
+    // Reappear / Makeup counts only in the header area (first 600 letters).
+    // A college line deep in the file can say "(REAPPEAR)" for that college's
+    // students while the file itself is the regular Spring result (Kohat 2nd
+    // P1: the D.I. Khan college is Reappear, the file is the regular Spring
+    // 2024 result). The file name always counts in full because it is short.
+    var head = (text || "").slice(0, 600);
+    // A "(REAPPEAR)" that belongs to a college line (e.g. "... SCIENCES,
+    // D.I.KHAN (REAPPEAR)") describes that college's students, not the file.
+    head = head.replace(/(college|institute|school|academy)[^\n()]{0,80}\(reappear\)/gi, "$1");
     // FIX 2026-11-15: "Reappear" is a Makeup exam. Before this, a Reappear
     // file was called Regular, and the guesser then wrongly guessed its type.
-    if (/reappear|make\s?-?\s?up|makeup/i.test(text)) return "Makeup";
+    if (/reappear|make\s?-?\s?up|makeup/i.test(head)) return "Makeup";
     if (/supplementary/i.test(text)) return "Supplementary";
     if (sessionName === "Summer") return "Summer";
     if (sessionName === "Winter") return "Winter";
@@ -1179,7 +1398,7 @@
   }
   function findDates(text){
     var out = [];
-    var re = /\b(\d{1,2})[.\/-](\d{1,2})[.\/-](20\d{2})\b/g, m;
+    var re = /\b(\d{1,2})[.\/-](\d{1,2})[.\/-](20\d{2})(?!\d)/g, m;
     while ((m = re.exec(text)) !== null) {
       var d = parseInt(m[1],10), mo = parseInt(m[2],10), y = parseInt(m[3],10);
       if (d>=1 && d<=31 && mo>=1 && mo<=12) out.push({str: pad(d)+"-"+pad(mo)+"-"+y, year:y, sortKey: y*10000+mo*100+d});
@@ -1195,6 +1414,12 @@
   function findProgram(text){
     var t = " " + text.replace(/\s+/g," ") + " ";
     if (/post[\s\-]?rn/i.test(t)) return "Post-RN BSN";
+    // FIX 2026-11-15c: the Malakand header writes the program out in full —
+    // "BACHELOR OF SCIENCE IN NURSING" — and the All Region file writes
+    // "BS NURISNG GENERIC" (typo). Both are BSN.
+    if (/bachelor of science in nursing/i.test(t)) return "BSN";
+    if (/b\.?\s*sc\.?\s+nurs/i.test(t)) return "BSN";
+    if (/bs\s*nur/i.test(t)) return "BSN";
     if (/generic\s*bsn|bsn\s*\(?\s*generic/i.test(t)) return "BSN (Generic)";
     if (/\bbsn\b/i.test(t)) return "BSN";
     if (/\blhv\b/i.test(t)) return "LHV";
@@ -1249,9 +1474,38 @@
     if (held) return {start: normDateStr(held[1]), end: null};
     return {start:null, end:null};
   }
+  // FIX 2026-11-15b: Credit Hours are printed on the first page of every
+  // format ("Credit Hours=16", "Cr. Hrs = 20", "Cr | 17", "Cr 17"). The
+  // total is 10-30, so a subject's own "Cr.Hr: 3" can never match it.
+  function findCreditHours(text){
+    var t = " " + (text || "").replace(/\s+/g, " ") + " ";
+    var m = t.match(/credit\s*hours?\s*[=:\-|]?\s*(\d{1,2})/i)
+      || t.match(/cr\.?\s*hrs\.?\s*[=:\-|]?\s*(\d{1,2})/i)
+      || t.match(/\bcr\s*[|:=]\s*(\d{1,2})\b/i)
+      || t.match(/\bcr\s+(\d{1,2})\b/i);
+    if (!m) return null;
+    var n = parseInt(m[1], 10);
+    if (n < 10 || n > 30) return null;
+    return n;
+  }
   function findBatchCode(name){
-    var m = name.match(/\bB\s?(\d{2})\s?[-–]\s?(\d{2})\b/i);
+    // FIX 2026-11-15c: file names join words with "_" — "_" is a word
+    // character in regex, so "\bB" never matched after an underscore
+    // ("BSN_4TH_B22-26_..."). Normalise first.
+    name = (name || "").replace(/_/g, " ");
+    // FIX 2026-11-15c: the user also writes the batch with full years —
+    // "B2023-2027" (Malakand and Peshawar 2nd files).
+    var m = name.match(/\bB\s?20(\d{2})\s?[-– ]\s?20(\d{2})\b/i);
     if (m) return {label:"B"+m[1]+"-"+m[2], startYear: 2000 + parseInt(m[1],10), how:"Your file name"};
+    m = name.match(/\b20(\d{2})\s?[-– ]\s?20(\d{2})\b/);
+    if (m) return {label:"B"+m[1]+"-"+m[2], startYear: 2000 + parseInt(m[1],10), how:"Your file name"};
+    m = name.match(/\bB\s?(\d{2})\s?[-– ]\s?(\d{2})\b/i);
+    if (m) return {label:"B"+m[1]+"-"+m[2], startYear: 2000 + parseInt(m[1],10), how:"Your file name"};
+    // FIX 2026-11-15b: a bare "22-26" (no B) in the file name is the same
+    // batch code — e.g. "BSN_4TH_22-26_KOHAT_REGION". The second year must
+    // be exactly 4 more than the first, so a date like "15-06" never matches.
+    m = name.match(/\b(\d{2})[ -](\d{2})\b/);
+    if (m && (parseInt(m[2],10) - parseInt(m[1],10) === 4)) return {label:"B"+m[1]+"-"+m[2], startYear: 2000 + parseInt(m[1],10), how:"Your file name"};
     m = name.match(/\bBatch\s*(20\d{2})\b/i);
     if (m) return {label:"Batch "+m[1], startYear: parseInt(m[1],10), how:"Your file name"};
     return null;
@@ -1263,25 +1517,22 @@
     return { label:"B"+(start%100)+"-"+(endShort<10?"0":"")+endShort, startYear:start, how:"Calculated — CHECK" };
   }
 
-  // College / institute names written inside a result — only names that ARE
-  // in the PDF are listed. Nothing about missing colleges.
+  // FIX 2026-11-15b: college-name scanning REMOVED — the user said on
+  // 2026-11-15 there is no need to scan college names. Kept as a stub so
+  // nothing else breaks; it always returns an empty list.
   function findColleges(text){
-    if (!text) return [];
-    var t = " " + text.replace(/\s+/g, " ") + " ";
-    var out = [], seen = {};
-    var re = /([A-Z][A-Za-z&'’.\-]*(?: [A-Z][A-Za-z&'’.\-]*){0,4} (?:College|Institute|School|Academy)(?: of (?:Nursing Sciences|Nursing\s*&\s*Health Sciences|Health Sciences|Medical Sciences|Nursing))?)/g, m;
-    while ((m = re.exec(t)) !== null) {
-      var name = m[1].replace(/\s+/g, " ").trim();
-      if (name.length < 8 || name.length > 72) continue;
-      if (/university|director|examination|controller|board of/i.test(name)) continue;
-      var key = name.toLowerCase();
-      if (seen[key]) continue;
-      seen[key] = true;
-      out.push(name);
-      if (out.length >= 15) break;
-    }
-    return out;
+    return [];
   }
+  // FIX 2026-11-15c: a result can be split into parts — P1, P2, P4 (the
+  // Kohat 2nd Spring result is split into P1 42 pages, P2 7 pages, P4 1
+  // page). Parts are NOT duplicates of each other. A REVISED file is a
+  // reissue of part of a result, a different subset — also not a duplicate
+  // (the merged list keeps P2 and REVISED as separate rows).
+  function findPart(text){
+    var m = (text || "").match(/\bP\s?([1-9])\b/i) || (text || "").match(/\bPART\s*([1-9])\b/i);
+    return m ? parseInt(m[1], 10) : null;
+  }
+  function isRevised(text){ return /\brevised\b/i.test(text || ""); }
   // Best guess for a result whose identity is partly unknown. Every guess is
   // labelled a guess, with the reason written next to it in plain words.
   function computeGuess(rec){
@@ -1338,11 +1589,52 @@
     if (it.examType && it.examType !== "Regular") s += " (" + it.examType + " exam)";
     s += ".";
     if (it.date && it.date !== "—") s += " The result came out on " + it.date + ".";
-    if (it.colleges && it.colleges.length) s += " Colleges in it: " + it.colleges.slice(0, 4).join(", ") + (it.colleges.length > 4 ? " and " + (it.colleges.length - 4) + " more." : ".");
+    if (it.part) s += " This is part " + it.part + " of the result.";
+    if (it.revised) s += " This is the revised version.";
     return s;
   }
 
+  // FIX 2026-11-15e: region-wise scanning + the user's own rename format.
+  // scanRegion: null = all regions, or one region name (e.g. "Mardan").
+  // activeRegionTab filters the shown list; currentShown is what the
+  // reports download, so a region tab IS that region's own report.
+  // skippedOther holds files from other regions, listed separately.
+  var scanRegion = null, activeRegionTab = "All", skippedOther = [], currentShown = [];
+  function sessionCode(name){
+    if (!name) return "?";
+    var n = String(name).toLowerCase();
+    if (n.indexOf("spring") === 0) return "SP";
+    if (n.indexOf("fall") === 0) return "FA";
+    if (n.indexOf("summer") === 0) return "SU";
+    if (n.indexOf("winter") === 0) return "WI";
+    return "?";
+  }
+  function batchCode(label){
+    if (!label || label === "—" || label.indexOf("All batches") === 0) return "?";
+    var m = /(\d{4})-(\d{4})/.exec(label);
+    if (m) return "B" + m[1].slice(2) + "-" + m[2].slice(2);
+    return "?";
+  }
+  function suggestedName(it){
+    // The user's own format, as in the names he gave his files:
+    // BSN_2ND_B23-27_SP_KOHAT_REGION. Anything missing gets "?" in its place.
+    var sem = it.semesters ? (semLabel(it.semesters[0]) + "-" + semLabel(it.semesters[it.semesters.length - 1])) : (it.semester ? semLabel(it.semester) : "?");
+    sem = String(sem).replace(/\s/g, "").toUpperCase();
+    var batch = batchCode(it.batch);
+    var ses = sessionCode(it.sessionName || it.session);
+    var marker = "";
+    if (it.examType === "Makeup") marker = "_REAPPEAR";
+    else if (it.examType === "Special") marker = "_UFM";
+    if (it.part) marker += "_P" + it.part;
+    if (it.revised) marker += "_REVISED";
+    var reg = (it.region && it.region.indexOf("CHECK") < 0) ? it.region.replace(/\s+/g, "_").toUpperCase() + (/\bregion$/i.test(it.region) ? "" : "_REGION") : "?";
+    return "BSN_" + sem + "_" + batch + "_" + ses + marker + "_" + reg;
+  }
+
   function parseFromText(text, fileName){
+    // FIX 2026-11-15b: file names join words with "_" — treat them as spaces
+    // so "BSN_4TH_22-26_KOHAT" reads the same as "BSN 4TH 22-26 KOHAT".
+    text = (text || "").replace(/_/g, " ");
     var rec = { readOk:false };
     var sem = findSemester(text);
     if (sem) rec.semester = sem;
@@ -1351,7 +1643,7 @@
     var reg = findRegion(text);
     if (reg) { rec.region = reg.region; rec.regionHow = reg.how; }
     var ses = findSession(text);
-    if (ses) { rec.session = ses.name + " " + ses.year; rec.sessionYear = ses.year; rec.sessionName = ses.name; }
+    if (ses) { rec.session = ses.year ? (ses.name + " " + ses.year) : ses.name; rec.sessionYear = ses.year || null; rec.sessionName = ses.name; }
     rec.examType = findExamType(text, rec.sessionName || "");
     var dates = findDates(text);
     if (dates.length) {
@@ -1368,14 +1660,32 @@
     var ex = findExamDates(text);
     rec.examStart = ex.start;
     rec.examEnd = ex.end;
+    rec.creditHours = findCreditHours(text);
+    rec.part = findPart(text);
+    rec.revised = isRevised(text);
     return rec;
   }
 
   function extractPdfText(file){
-    // Deep scan: reads the text streams of EVERY page, using the built-in
-    // reader above — no library, no CDN, no internet needed.
+    // FIX 2026-11-15b: first 10 pages only (the built-in reader below
+    // decodes the first 12 text-bearing streams — about the first 10 pages).
+    // A result's identity is on the first page; reading all 130 pages of a
+    // big result wastes time and finds nothing new. No library, no CDN.
+    // No internet needed.
     return file.arrayBuffer().then(function(buf){
-      return readPdfInside(buf);
+      return readPdfInside(buf).then(function(r){
+        // FIX 2026-11-15e: exact-duplicate check. SHA-256 of the file bytes
+        // is free because the bytes are already in memory. Only when the
+        // browser offers crypto.subtle (not on every old WebView).
+        if (window.crypto && window.crypto.subtle && window.crypto.subtle.digest) {
+          return window.crypto.subtle.digest("SHA-256", buf).then(function(h){
+            var arr = new Uint8Array(h), hex = "";
+            for (var i = 0; i < arr.length; i++) hex += ("0" + arr[i].toString(16)).slice(-2);
+            r.hash = hex; return r;
+          }).catch(function(){ return r; });
+        }
+        return r;
+      });
     }).catch(function(){ return {text:"", pages:null}; });
   }
 
@@ -1439,12 +1749,16 @@
       notifNo: fromContent.notifNo || null,
       appeared: fromContent.appeared || null,
       passed: fromContent.passed || null,
+      creditHours: fromContent.creditHours || fromName.creditHours || null,
+      part: fromName.part || fromContent.part || null,
+      revised: !!(fromName.revised || fromContent.revised),
       examStart: fromContent.examStart || null,
       examEnd: fromContent.examEnd || null,
-      colleges: findColleges(pdfText),
+      colleges: [], // FIX 2026-11-15b: college-name scanning removed — not needed.
       hasRD: /regional\s+director/i.test(pdfText || ""),
       dupe: "",
-      dupeKind: ""
+      dupeKind: "",
+      hash: (extracted && extracted.hash) || null
     };
     return finalizeRecord(rec);
   }
@@ -1463,13 +1777,24 @@
   function contentKey(it){
     if (it.semesters) return null;
     if (!it.semester || !it.sessionYear || !it.region || it.region.indexOf("CHECK") >= 0) return null;
-    return (it.region + "|" + it.semester + "|" + it.session + "|" + it.examType).toLowerCase();
+    // FIX 2026-11-15c: the part is part of the identity — P1, P2 and P4 of
+    // the same result are different files, not copies of each other, and a
+    // REVISED reissue is a different subset, not a copy either.
+    return (it.region + "|" + it.semester + "|" + it.session + "|" + it.examType + "|" + (it.part || "whole") + "|" + (it.revised ? "revised" : "original")).toLowerCase();
   }
   function recomputeDupes(){
-    var byContent = {};
+    var byContent = {}, byHash = {};
     items.forEach(function(it){
       if (it.dupeKind === "Same file") return; // already flagged, keep it
       it.dupe = ""; it.dupeKind = "";
+      // FIX 2026-11-15e: same bytes, different name — an exact copy.
+      if (it.hash && byHash[it.hash]) {
+        var h = byHash[it.hash];
+        it.dupeKind = "Same file";
+        it.dupe = "Same file as “" + h.fileName + "” — the file bytes are identical, only the name is different. Its location: " + h.path;
+        return;
+      }
+      if (it.hash) byHash[it.hash] = it;
       var key = contentKey(it);
       if (!key) return;
       if (byContent[key]) {
@@ -1486,11 +1811,19 @@
 
   // ---------- OCR for photo PDFs (full power, two engines together) ----------
   // A photo PDF has no text inside, so: pdf.js draws the page as a picture,
-  // and Tesseract.js reads the writing in that picture (OCR). The first page
-  // is read; if the semester or region is still not found, the last page is
-  // read too (that is where the signature and date sit). Both libraries load
-  // from the internet once; if they cannot load, the file falls back to its
-  // file name and the report says so plainly.
+  // and Tesseract.js reads the writing in that picture (OCR).
+  // FIX 2026-11-15b: FIRST 10 PAGES ONLY, with an early stop. A result's
+  // identity is on the first page — the four real results the user sent
+  // prove it (Kohat, Mardan, UFM, Peshawar formats all put semester,
+  // session, date and credit hours on page 1). OCR reads page 1, then 2,
+  // and so on up to page 10, and STOPS as soon as semester, region,
+  // session and date are all found (usually page 1). The old code read the
+  // LAST page too — for a 130-page result that is page 130 — and the
+  // Regional Director signature there is not needed: old results have no
+  // RD, some new ones say "Director KMU IHS" instead, and some have no
+  // region in the signatures at all. Both libraries load from the internet
+  // once; if they cannot load, the file falls back to its file name and the
+  // report says so plainly.
   var ocrWorkerP = null, ocrFailed = false;
   function ocrAvailable(){ return !!(window.Tesseract && window.pdfjsLib) && !ocrFailed; }
   function getOcrWorker(){
@@ -1529,7 +1862,7 @@
     if (!rec.appeared && p.appeared) rec.appeared = p.appeared;
     if (!rec.passed && p.passed) rec.passed = p.passed;
     if (!rec.examStart && p.examStart) { rec.examStart = p.examStart; rec.examEnd = p.examEnd; }
-    if (!rec.colleges.length) rec.colleges = findColleges(text);
+    if (!rec.creditHours && p.creditHours) rec.creditHours = p.creditHours;
     if (!rec.hasRD && /regional\s+director/i.test(text)) rec.hasRD = true;
     if (got || text.trim().length > 60) rec.ocrOk = true;
     finalizeRecord(rec);
@@ -1544,6 +1877,7 @@
       return window.pdfjsLib.getDocument({ data: buf }).promise;
     }).then(function(pdf){
       var total = pdf.numPages || rec.pages || 1;
+      var last = Math.min(10, total);
       function renderPage(n){
         return pdf.getPage(n).then(function(page){
           var vp = page.getViewport({ scale: 2 });
@@ -1551,18 +1885,38 @@
           canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
           var ctx = canvas.getContext("2d");
           ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-          return page.render({ canvasContext: ctx, viewport: vp }).promise.then(function(){ return canvas; });
+          return page.render({ canvasContext: ctx, viewport: vp }).promise.then(function(){
+            // FIX 2026-11-15e: grayscale before OCR (research: 2x upscale +
+            // grayscale helps; binarizing first makes it worse, so no threshold).
+            try {
+              var img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              var d = img.data;
+              for (var i = 0; i < d.length; i += 4) {
+                var g = Math.round(0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]);
+                d[i] = g; d[i + 1] = g; d[i + 2] = g;
+              }
+              ctx.putImageData(img, 0, 0);
+            } catch(e) {}
+            return canvas;
+          });
         });
       }
-      return renderPage(1).then(function(c1){
-        return ocrCanvasText(c1).then(function(t1){
-          var needLast = total > 1 && (t1.trim().length < 40 || !findSemester(t1) || !findRegion(t1));
-          if (!needLast) return t1;
-          return renderPage(total).then(function(c2){
-            return ocrCanvasText(c2).then(function(t2){ return (t1 || "") + " \n " + (t2 || ""); });
-          }).catch(function(){ return t1; });
-        });
-      });
+      function enough(text){
+        // Stop early when the four things that identify a result are found.
+        return !!(findSemester(text) && findRegion(text) && findSession(text) && findDates(text).length);
+      }
+      var all = "";
+      function readPage(n){
+        if (n > last) return Promise.resolve(all);
+        return renderPage(n).then(function(c){
+          return ocrCanvasText(c).then(function(t){
+            all += " \n " + (t || "");
+            if (enough(all)) return all;
+            return readPage(n + 1);
+          });
+        }).catch(function(){ return all; });
+      }
+      return readPage(1);
     }).then(function(text){
       if (text && text.trim().length > 30) mergeOcr(rec, text);
       return rec;
@@ -1579,6 +1933,20 @@
     barFill.style.width = pct + "%";
     progressText.innerHTML = html;
   }
+  // FIX 2026-11-15b: estimated time, in plain words. A text PDF takes
+  // about 1 second; a photo PDF takes about 5-10 seconds for the first
+  // page of OCR. The first estimate is an average — the phone's speed
+  // decides the real time — and the live "about X left" uses the real
+  // speed so far, so it gets more accurate as the scan goes on.
+  function fmtDur(ms){
+    if (!ms || ms < 0) ms = 0;
+    var s = Math.round(ms / 1000);
+    if (s < 60) return "about " + Math.max(1, s) + " second" + (s === 1 ? "" : "s");
+    var m = Math.round(s / 60);
+    if (m < 60) return "about " + m + " minute" + (m === 1 ? "" : "s");
+    var h = Math.floor(m / 60);
+    return "about " + h + " hour" + (h === 1 ? "" : "s") + " " + (m % 60) + " minutes";
+  }
   function handleFiles(fileList){
     if (scanning || !fileList || !fileList.length) return;
     var all = Array.prototype.slice.call(fileList);
@@ -1591,6 +1959,19 @@
       seenKeys[key] = true;
       pdfs.push(f);
     });
+    // FIX 2026-11-15e: region-wise scan. If one region is picked, files
+    // whose FILE NAME already says another region are skipped at once — no
+    // reading, no OCR. Files with no region in the name are still read;
+    // the region is checked again after the record is built (afterRead).
+    if (scanRegion) {
+      var keep = [];
+      pdfs.forEach(function(f){
+        var nr = parseFromText(f.name.replace(/[_\-]+/g, " "), f.name).region;
+        if (nr && nr !== scanRegion) skippedOther.push({ fileName: f.name, path: folderPathOf(f), region: nr });
+        else keep.push(f);
+      });
+      pdfs = keep;
+    }
     otherCount += others;
     // Same-file copies: keep them in the list, flagged — never dropped silently.
     var cloned = 0;
@@ -1610,11 +1991,31 @@
     scanning = true;
     document.body.classList.add("scanning");
     progressWrap.classList.add("on");
+    // FIX 2026-11-15b: estimated time. About 6 seconds a file on average
+    // (text ~1s, photo OCR ~5-10s for the first page). Shown up front and
+    // updated live from the real speed, so the user knows how long it takes.
+    var scanStart = Date.now();
+    var estTotalMs = pdfs.length * 6000;
+    function timeLeft(done){
+      var el = Date.now() - scanStart;
+      var avg = done > 0 ? el / done : 6000;
+      return Math.round(avg * (pdfs.length - done));
+    }
     // Show the upload the moment the files are picked — before any reading
     // starts — so it never looks like nothing is happening.
     uploadBox.classList.add("on"); uploadBox.classList.remove("done");
-    uploadText.innerHTML = "Uploading — <b>" + all.length + "</b> file(s) received. Reading starts now, one file at a time. Please keep this page open.";
-    setProgress(0, '<span class="pct">0%</span> Files received — starting to read…');
+    uploadText.innerHTML = "Uploading — <b>" + all.length + "</b> file(s) received. Reading starts now, one file at a time. Estimated time: <b>" + fmtDur(estTotalMs) + "</b> for " + pdfs.length + " PDF(s). Please keep this page open.";
+    setProgress(0, '<span class="pct">0%</span> Files received — starting to read… Estimated time: ' + fmtDur(estTotalMs) + '.');
+    function afterRead(rec, i){
+      // FIX 2026-11-15e: a file whose region (from inside the PDF or the
+      // photo) is another region goes to the skipped list, not the main list.
+      if (scanRegion && rec.region && rec.region.indexOf("CHECK") < 0 && rec.region !== scanRegion) {
+        skippedOther.push({ fileName: rec.fileName, path: rec.path, region: rec.region });
+      } else {
+        items.push(rec);
+      }
+      step(i + 1);
+    }
     function step(i){
       if (i >= pdfs.length) {
         scanning = false;
@@ -1622,31 +2023,31 @@
         var dc = dupItems().length;
         var ocrN = items.filter(function(x){ return x.ocrOk; }).length;
         var photoLeft = items.filter(function(x){ return !x.readOk && !x.ocrOk; }).length;
-        setProgress(100, '<span class="pct">100%</span> All done — every file has been read. '
+        setProgress(100, '<span class="pct">100%</span> All done — every file has been read. Finished in ' + fmtDur(Date.now() - scanStart) + '. '
           + pdfs.length + " new file(s) in this round."
           + (ocrN ? " " + ocrN + " photo PDF(s) were read with OCR." : "")
           + (photoLeft && !ocrAvailable() ? " " + photoLeft + " photo PDF(s) could not be read this time: the OCR reader needs an internet connection once to load. Connect once, scan again, and those will be read from the photo itself." : "")
           + (cloned ? " " + cloned + " same-file copy(ies) flagged." : "")
           + (others ? " " + others + " other file(s) counted." : "")
-          + (dc ? " " + dc + " possible duplicate(s) found — see the red box below." : " No duplicates found."));
+          + (dc ? " " + dc + " possible duplicate(s) found — see the red box below." : " No duplicates found.")
+          + (skippedOther.length ? " " + skippedOther.length + " file(s) from other regions were skipped for this scan — see their list below." : ""));
         uploadBox.classList.add("done");
-        uploadText.innerHTML = "Upload finished — all <b>" + all.length + "</b> file(s) received and read. The results are below, in simple words.";
+        uploadText.innerHTML = "Upload finished — all <b>" + all.length + "</b> file(s) received and read in " + fmtDur(Date.now() - scanStart) + ". The results are below, in simple words.";
         render();
         document.getElementById("summary").scrollIntoView({behavior: reducedMotion ? "auto" : "smooth", block:"start"});
         return;
       }
       var f = pdfs[i];
       var pct = Math.round((i / pdfs.length) * 100);
-      setProgress(pct, '<span class="pct">' + pct + '%</span> Reading file ' + (i+1) + " of " + pdfs.length + ", every page: " + esc(f.name));
-      uploadText.innerHTML = "Files received: <b>" + all.length + "</b> — now reading file " + (i+1) + " of " + pdfs.length + "…";
+      setProgress(pct, '<span class="pct">' + pct + '%</span> Reading file ' + (i+1) + " of " + pdfs.length + ", first 10 pages: " + esc(f.name) + " — about " + fmtDur(timeLeft(i)) + " left.");
+      uploadText.innerHTML = "Files received: <b>" + all.length + "</b> — now reading file " + (i+1) + " of " + pdfs.length + "… About " + fmtDur(timeLeft(i)) + " left.";
       extractPdfText(f).then(function(ex){
         var rec = buildRecord(f, ex);
         if (!rec.readOk && ocrAvailable()) {
-          setProgress(pct, '<span class="pct">' + pct + '%</span> File ' + (i+1) + " of " + pdfs.length + " is a photo PDF — reading the photo with OCR. This one takes a little longer: " + esc(f.name));
-          return ocrRecord(f, rec).then(function(){ items.push(rec); step(i+1); });
+          setProgress(pct, '<span class="pct">' + pct + '%</span> File ' + (i+1) + " of " + pdfs.length + " is a photo PDF — reading the photo with OCR (first 10 pages, stops early when it is found). This one takes a little longer: " + esc(f.name) + " — about " + fmtDur(timeLeft(i)) + " left.");
+          return ocrRecord(f, rec).then(function(){ afterRead(rec, i); });
         }
-        items.push(rec);
-        step(i+1);
+        afterRead(rec, i);
       });
     }
     // Let the phone draw the upload animation first, then start reading.
@@ -1727,6 +2128,13 @@
         + '</li>';
     }).join("");
 
+    // FIX 2026-11-15e: other regions skipped in this scan — their own list.
+    var skipBox = document.getElementById("skipBox");
+    skipBox.classList.toggle("on", skippedOther.length > 0);
+    document.getElementById("skipList").innerHTML = skippedOther.map(function(s){
+      return '<li><b>' + esc(s.fileName) + '</b> — ' + esc(s.region) + '<br><span class="dloc">' + esc(s.path) + '</span></li>';
+    }).join("");
+
     var cy = countsBy(function(i){ return i.year ? String(i.year) : "No date"; });
     document.getElementById("chipsYear").innerHTML =
       chipsHtml(cy, Object.keys(cy).sort()) || '<span class="chip warn">None yet</span>';
@@ -1738,6 +2146,16 @@
     document.getElementById("chipsType").innerHTML =
       chipsHtml(ct, Object.keys(ct).sort()) || '<span class="chip warn">None yet</span>';
 
+    // FIX 2026-11-15e: region tabs — one tab per region, with counts.
+    // Tapping a tab shows only that region's list; the reports download
+    // the shown list, so a tab is that region's own report.
+    var tabRegions = ["All"].concat(Object.keys(cr).filter(function(k){ return k !== "All"; }).sort(function(a,b){ return regionRank(a)-regionRank(b); }));
+    if (activeRegionTab !== "All" && tabRegions.indexOf(activeRegionTab) < 0) activeRegionTab = "All";
+    document.getElementById("regionTabs").innerHTML = tabRegions.map(function(r){
+      var n = r === "All" ? items.length : (cr[r] || 0);
+      return '<button type="button" class="tab' + (r === activeRegionTab ? " on" : "") + '" data-region="' + esc(r) + '">' + esc(r) + " · " + n + '</button>';
+    }).join("");
+
     if (!has) { resultsEl.innerHTML = ""; listText.value = ""; document.getElementById("reportView").classList.remove("on"); return; }
 
     var sorted = sortedItems();
@@ -1745,6 +2163,9 @@
       var hay = (it.fileName + " " + it.region + " " + it.session + " " + it.examType + " " + (it.program || "") + " " + semDisplay(it) + " " + (it.colleges || []).join(" ")).toLowerCase();
       return hay.indexOf(filterText) >= 0;
     }) : sorted;
+    if (activeRegionTab !== "All") {
+      shown = shown.filter(function(it){ return it.region === activeRegionTab; });
+    }
     var html = "";
     var curYear = null, curRegion = null, animIdx = 0;
     shown.forEach(function(it){
@@ -1766,7 +2187,7 @@
       tags += it.check
         ? ' <span class="tag tag-check">' + esc(it.check) + '</span>'
         : (it.readOk ? ' <span class="tag tag-ok">Read from PDF</span>' : (it.ocrOk ? '' : ' <span class="tag tag-check">From file name only</span>'));
-      var delay = Math.min(animIdx * 45, 540); animIdx++;
+      var delay = Math.min(animIdx * 50, 600); animIdx++;
       html += '<div class="item' + (it.dupe ? " is-dupe" : "") + '" data-sem="' + (it.semester ? it.semester : "") + '" style="--d:' + delay + 'ms">'
         + '<div class="fname">' + esc(it.fileName) + tags + '</div>'
         + '<div class="loc">Location: <b>' + esc(it.path) + '</b></div>'
@@ -1788,10 +2209,13 @@
         + '<span>Appeared: ' + fieldOrCheck(it.appeared) + '</span>'
         + '<span>Passed: ' + fieldOrCheck(it.passed) + '</span>'
         + '<span>University: ' + fieldOrCheck(it.university) + '</span>'
-        + '<span>Colleges in this result: ' + (it.colleges && it.colleges.length ? '<b>' + esc(it.colleges.join(", ")) + '</b>' : '<span class="miss">— none read</span>') + '</span>'
+        + '<span>Credit hours: ' + (it.creditHours ? '<b>' + it.creditHours + '</b>' : '<span class="miss">— not on the page</span>') + '</span>'
+        + (it.part ? '<span>Part: <b>' + it.part + '</b></span>' : '')
+        + (it.revised ? '<span><b>Revised version</b></span>' : '')
         + '<span>Regional Director sign: <b>' + (it.hasRD ? "Found in the PDF" : "Not seen") + '</b></span>'
-        + '<span>Read from: <b>' + (it.readOk ? "Inside the PDF (every page)" : (it.ocrOk ? "OCR — read from the photo pages" : "File name only — no readable text inside")) + '</b></span>'
+        + '<span>Read from: <b>' + (it.readOk ? "Inside the PDF (first 10 pages)" : (it.ocrOk ? "OCR — first 10 pages of the photo" : "File name only — no readable text inside")) + '</b></span>'
         + '</div>'
+        + '<div class="newname">New name: <button type="button" class="newname-btn" data-name="' + esc(suggestedName(it)) + '">' + esc(suggestedName(it)) + '</button> <span class="newname-hint">tap to copy · ? means missing</span></div>'
         + (it.guess ? '<div class="guess">Best guess: <b>' + esc(guessText(it.guess)) + '</b> — this is only a guess, please check it.</div>' : '')
         + (it.dupe ? '<div class="dupnote">DUPLICATE? ' + esc(it.dupe) + '</div>' : '')
         + '</div>';
@@ -1800,7 +2224,8 @@
     else html += "</div>";
     resultsEl.innerHTML = html;
 
-    listText.value = buildTextList(sorted);
+    currentShown = shown;
+    listText.value = buildTextList(shown);
   }
 
   function detailLine(it){
@@ -1813,9 +2238,10 @@
       + " | Passed: " + (it.passed || "CHECK")
       + " | University: " + (it.university || "CHECK")
       + " | Regional Director sign: " + (it.hasRD ? "found" : "not seen")
-      + " | Read from: " + (it.readOk ? "inside the PDF (every page)" : (it.ocrOk ? "OCR — read from the photo pages" : "file name only — no readable text inside"));
+      + " | Read from: " + (it.readOk ? "inside the PDF (first 10 pages)" : (it.ocrOk ? "OCR — first 10 pages of the photo" : "file name only — no readable text inside"));
     s += "\n      In simple words: " + plainLine(it);
-    if (it.colleges && it.colleges.length) s += "\n      Colleges in this result: " + it.colleges.join(", ");
+    s += "\n      New name: " + suggestedName(it) + " (? means that part is missing)";
+    if (it.creditHours) s += "\n      Credit hours: " + it.creditHours;
     if (it.known) s += "\n      This result is already in your known list of 181 results.";
     if (it.guess) s += "\n      Best guess: " + guessText(it.guess) + " (a guess only — please check)";
     return s;
@@ -1825,6 +2251,8 @@
     var dups = sorted.filter(function(i){ return !!i.dupe; });
     var lines = [];
     lines.push("KMU RESULTS — SCAN REPORT (written in simple words)");
+    lines.push("Arrange by TA Series.");
+    if (activeRegionTab !== "All") lines.push("Region shown: " + activeRegionTab + " only.");
     lines.push("What this is: every result PDF you picked, read one by one and written in one clean list.");
     lines.push("The list is arranged the way you arrange your results: year first, then region, then semester.");
     lines.push("Total files: " + sorted.length + ". Different results: " + main.length + ". Same result found more than once: " + dups.length + ". Other (non-PDF) files seen: " + otherCount + ".");
@@ -1859,18 +2287,35 @@
         lines.push("   " + it.dupe);
       });
     }
+    if (skippedOther.length) {
+      lines.push("");
+      lines.push("===== SKIPPED — OTHER REGIONS (not read in this scan) =====");
+      skippedOther.forEach(function(s, i){ lines.push((i+1) + ". " + s.fileName + " — " + s.region + " | Location: " + s.path); });
+    }
     return lines.join("\n");
   }
 
   function csvCell(v){ return '"' + String(v == null ? "" : v).replace(/"/g,'""') + '"'; }
   function buildCsv(){
-    var rows = [["No","Year","Region","Program","Semester","Session","Type","Result Date","Exam Dates","Notification / Result No","Appeared","Passed","University","Pages","Size","Batch","Batch From","Folder Location","Folder","File Name","Read From","Duplicate?","Duplicate Detail","Note","In Simple Words","Colleges In This Result","Regional Director Sign","Read By OCR","In Your Known List","Best Guess"]];
-    sortedItems().forEach(function(it, i){
+    var rows = [["No","Year","Region","Program","Semester","Session","Type","Result Date","Exam Dates","Notification / Result No","Appeared","Passed","University","Pages","Size","Batch","Batch From","Folder Location","Folder","File Name","Suggested New Name","Read From","Duplicate?","Duplicate Detail","Note","In Simple Words","Credit Hours","Regional Director Sign","Read By OCR","In Your Known List","Best Guess","Part","Revised"]];
+    var csvList = currentShown.length ? currentShown : sortedItems();
+    csvList.forEach(function(it, i){
       rows.push([i+1, it.year || "No date", it.region, it.program || "CHECK", semDisplay(it), it.session, it.examType, it.date,
                  it.examDates || "CHECK", it.notifNo || "CHECK", it.appeared || "CHECK", it.passed || "CHECK", it.university || "CHECK",
-                 it.pages || "", it.size, it.batch, it.batchHow, it.path, it.folder, it.fileName,
-                 it.readOk ? "Inside PDF (every page)" : (it.ocrOk ? "OCR (photo pages)" : "File name only"), it.dupe ? "DUPLICATE?" : "", it.dupe || "", it.check || "",
-                 plainLine(it), (it.colleges || []).join("; "), it.hasRD ? "Found" : "Not seen", it.ocrOk ? "Yes" : "", it.known ? "Yes" : "", guessText(it.guess)]);
+                 it.pages || "", it.size, it.batch, it.batchHow, it.path, it.folder, it.fileName, suggestedName(it),
+                 it.readOk ? "Inside PDF (first 10 pages)" : (it.ocrOk ? "OCR (first 10 pages)" : "File name only"), it.dupe ? "DUPLICATE?" : "", it.dupe || "", it.check || "",
+                 plainLine(it), it.creditHours || "", it.hasRD ? "Found" : "Not seen", it.ocrOk ? "Yes" : "", it.known ? "Yes" : "", guessText(it.guess), it.part || "", it.revised ? "Yes" : ""]);
+    });
+    return rows.map(function(r){ return r.map(csvCell).join(","); }).join("\n");
+  }
+
+  function buildRenameCsv(){
+    // FIX 2026-11-15e: rename plan — old name next to the suggested new name,
+    // so the files can be renamed in bulk later. "?" means that part is missing.
+    var rows = [["Old File Name","Suggested New Name","Folder Location","Region","Semester","Session","Result Date"]];
+    var list = currentShown.length ? currentShown : sortedItems();
+    list.forEach(function(it){
+      rows.push([it.fileName, suggestedName(it), it.path, it.region, semDisplay(it), it.session, it.date]);
     });
     return rows.map(function(r){ return r.map(csvCell).join(","); }).join("\n");
   }
@@ -1991,7 +2436,7 @@
   }
 
   function reportBodyHtml(){
-    var sorted = sortedItems();
+    var sorted = currentShown.length ? currentShown : sortedItems();
     var main = mainItems(sorted);
     var dups = sorted.filter(function(i){ return !!i.dupe; });
     var readN = items.filter(function(i){return i.readOk;}).length;
@@ -2000,6 +2445,7 @@
     var chkN = items.filter(function(i){return i.check;}).length;
     var h = "";
     h += "<h2>KMU Results — Scan Report</h2>";
+    h += "<p>Arrange by TA Series.</p>";
     h += "<p>Written in simple words. Every result you picked, read one by one. The list is arranged by year first, then region, then semester.</p>";
     h += "<p><b>Total files:</b> " + sorted.length + " &nbsp;|&nbsp; <b>Different results:</b> " + main.length
        + " &nbsp;|&nbsp; <b>Same result more than once:</b> " + dups.length
@@ -2010,14 +2456,14 @@
        + " &nbsp;|&nbsp; <b>Need a check:</b> " + chkN
        + " &nbsp;|&nbsp; <b>Other (non-PDF) files:</b> " + otherCount + "</p>";
     h += "<h3>Main list — each result counted once</h3>";
-    h += '<div class="report-scroll"><table><thead><tr><th>No</th><th>Year</th><th>Region</th><th>Program</th><th>Sem</th><th>Session</th><th>Type</th><th>Result date</th><th>Exam dates</th><th>Notif. No</th><th>Appeared</th><th>Passed</th><th>Batch</th><th>Pages</th><th>Folder location</th><th>File</th><th>Note</th></tr></thead><tbody>';
+    h += '<div class="report-scroll"><table><thead><tr><th>No</th><th>Year</th><th>Region</th><th>Program</th><th>Sem</th><th>Session</th><th>Type</th><th>Result date</th><th>Exam dates</th><th>Notif. No</th><th>Appeared</th><th>Passed</th><th>Batch</th><th>Pages</th><th>Folder location</th><th>File</th><th>New name</th><th>Note</th></tr></thead><tbody>';
     main.forEach(function(it, i){
       h += "<tr><td>" + (i+1) + "</td><td>" + esc(it.year || "No date") + "</td><td>" + esc(it.region) + "</td><td>"
         + esc(it.program || "CHECK") + "</td><td>" + esc(semDisplay(it)) + "</td><td>" + esc(it.session) + "</td><td>"
         + esc(it.examType) + "</td><td>" + esc(it.date) + "</td><td>" + esc(it.examDates || "CHECK") + "</td><td>"
         + esc(it.notifNo || "CHECK") + "</td><td>" + esc(it.appeared || "CHECK") + "</td><td>" + esc(it.passed || "CHECK") + "</td><td>"
-        + esc(it.batch) + "</td><td>" + esc(it.pages || "—") + "</td><td>" + esc(it.path) + "</td><td>" + esc(it.fileName) + "</td><td>"
-        + esc([it.check, it.known ? "In your known list" : "", it.ocrOk ? "Read by OCR" : "", (it.readOk || it.ocrOk) ? "" : "File name only", it.guess ? ("Best guess: " + guessText(it.guess)) : "", (it.colleges && it.colleges.length) ? ("Colleges: " + it.colleges.join(", ")) : "", plainLine(it)].filter(Boolean).join(" · ")) + "</td></tr>";
+        + esc(it.batch) + "</td><td>" + esc(it.pages || "—") + "</td><td>" + esc(it.path) + "</td><td>" + esc(it.fileName) + "</td><td>" + esc(suggestedName(it)) + "</td><td>"
+        + esc([it.check, it.known ? "In your known list" : "", it.ocrOk ? "Read by OCR" : "", (it.readOk || it.ocrOk) ? "" : "File name only", it.guess ? ("Best guess: " + guessText(it.guess)) : "", (it.creditHours ? ("Credit hours: " + it.creditHours) : ""), plainLine(it)].filter(Boolean).join(" · ")) + "</td></tr>";
     });
     h += "</tbody></table></div>";
     h += "<h3>Duplicates — not counted in the main list</h3>";
@@ -2028,6 +2474,11 @@
       dups.forEach(function(it){
         h += "<li><b>" + esc(it.fileName) + "</b><br>Location: " + esc(it.path) + "<br>" + esc(it.dupe) + "</li>";
       });
+      h += "</ul>";
+    }
+    if (skippedOther.length) {
+      h += "<h3>Skipped — other regions (not read in this scan)</h3><ul>";
+      skippedOther.forEach(function(s){ h += "<li><b>" + esc(s.fileName) + "</b> — " + esc(s.region) + "<br>Location: " + esc(s.path) + "</li>"; });
       h += "</ul>";
     }
     h += "<p>Where a word says CHECK, that thing could not be found in the PDF — please check that one yourself. A batch marked CHECK is worked out from the semester and the year; it is not written inside the result. A line that says 'Best guess' is only a guess, not a fact.</p>";
@@ -2084,6 +2535,9 @@
   document.getElementById("dlCsvBtn").addEventListener("click", function(){
     dlMsg(tryDownload("KMU_Scan_Report.csv", buildCsv(), "text/csv;charset=utf-8"), "KMU_Scan_Report.csv");
   });
+  document.getElementById("dlRenameBtn").addEventListener("click", function(){
+    dlMsg(tryDownload("KMU_Rename_Plan.csv", buildRenameCsv(), "text/csv;charset=utf-8"), "KMU_Rename_Plan.csv");
+  });
   document.getElementById("dlHtmlBtn").addEventListener("click", function(){
     dlMsg(tryDownload("KMU_Scan_Report.html", fullReportHtml(), "text/html;charset=utf-8"), "KMU_Scan_Report.html");
   });
@@ -2103,6 +2557,32 @@
     } else {
       copyMsg.textContent = "This phone does not offer Share here. Use the Copy button instead — it always works."; copyMsg.className = "msg";
     }
+  });
+
+  // FIX 2026-11-15e: region picker — which region to scan.
+  document.querySelectorAll("#regionPick .rpick").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      document.querySelectorAll("#regionPick .rpick").forEach(function(b){ b.classList.remove("on"); });
+      btn.classList.add("on");
+      scanRegion = btn.getAttribute("data-region") || null;
+      activeRegionTab = scanRegion || "All";
+    });
+  });
+  // Region tabs — tap a tab to show only that region.
+  document.getElementById("regionTabs").addEventListener("click", function(e){
+    var t = e.target.closest ? e.target.closest(".tab") : null;
+    if (!t) return;
+    activeRegionTab = t.getAttribute("data-region");
+    render();
+  });
+  // Tap a suggested new name to copy it.
+  document.getElementById("results").addEventListener("click", function(e){
+    var b = e.target.closest ? e.target.closest(".newname-btn") : null;
+    if (!b) return;
+    var name = b.getAttribute("data-name") || "";
+    function done(){ copyMsg.textContent = "Copied the new name: " + name; copyMsg.className = "msg good"; }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(name).then(done, function(){ copyMsg.textContent = "Copy did not work — the new name is: " + name; copyMsg.className = "msg"; });
+    else { copyMsg.textContent = "The new name is: " + name; copyMsg.className = "msg"; }
   });
 
   render();
