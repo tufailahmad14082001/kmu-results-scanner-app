@@ -1912,10 +1912,10 @@
   // works fully offline (no Wi-Fi, no mobile data). The local files are
   // tried first; if they cannot load for any reason, the internet copies
   // are tried instead (the old way), so the scan still works when online.
-  // FIX 2026-11-15g: the reader gets 90 seconds: if it cannot load in that
-  // time, the file is read from its name only and the scan moves on.
-  // ocrWorkerState tells the progress line what is happening, so a slow
-  // start is visible, not a stuck 0%.
+  // FIX 2026-11-15g: the reader gets a time limit: if it cannot load
+  // in that time, the file is read from its name only and the scan moves
+  // on. ocrWorkerState tells the progress line what is happening, so a
+  // slow start is visible, not a stuck 0%.
   var ocrWorkerP = null, ocrFailed = false, ocrWorkerState = "idle"; // idle | loading | ready | failed
   var ocrLocal = false; // true when the bundled (offline) reader is running
   function ocrAvailable(){ return !!(window.Tesseract && window.pdfjsLib) && !ocrFailed; }
@@ -1924,23 +1924,34 @@
     if (ocrWorkerP) return ocrWorkerP;
     if (ocrFailed) return Promise.resolve(null);
     ocrWorkerState = "loading";
+    // FIX 2026-11-16c: the reader's files must be given as FULL addresses.
+    // Tesseract starts its worker from a small blob that runs
+    // importScripts("<workerPath>") — a relative path like "worker.min.js"
+    // is read against the blob itself and never loads, so the reader sat
+    // at file 1 until the time limit, then went to the internet copy
+    // (which cannot load offline either). A full address loads from the
+    // app itself. workerBlobURL:false starts a real worker instead of a
+    // blob one, so its own files load the same way.
+    var assetBase = "./";
+    try { assetBase = location.href.replace(/[^\/]*$/, ""); } catch(e) {}
     function tryLocal(){
       try {
         return withTimeout(window.Tesseract.createWorker("eng", 1, {
-          workerPath: "worker.min.js",
-          corePath: "./",
-          langPath: "./",
+          workerPath: assetBase + "worker.min.js",
+          corePath: assetBase,
+          langPath: assetBase,
+          workerBlobURL: false,
           // FIX 2026-11-16b: the app build stores the language file
           // decompressed (eng.traineddata, no .gz), so ask for the plain
           // file — the default would ask for eng.traineddata.gz, which is
           // not in the app, and the reader would fail offline.
           gzip: false
-        }), 90000);
+        }), 150000).catch(function(){ return null; });
       } catch(e) { return Promise.resolve(null); }
     }
     function tryCdn(){
       try {
-        return withTimeout(window.Tesseract.createWorker("eng"), 90000);
+        return withTimeout(window.Tesseract.createWorker("eng"), 60000).catch(function(){ return null; });
       } catch(e) { return Promise.resolve(null); }
     }
     ocrWorkerP = tryLocal().then(function(w){
@@ -2231,6 +2242,10 @@
     }
     scanning = true;
     startScanKeepAlive();
+    // FIX 2026-11-16c: warm up the photo reader now, while the fast text
+    // part runs — so the first photo file does not wait for the reader to
+    // load (it reads ~30 MB of files the first time).
+    try { getOcrWorker(); } catch(e) {}
     scanGen++;
     var myGen = scanGen;
     paused = false; resumePhase = 1; resumeIndex = 0; resumeScan = null;
@@ -2328,7 +2343,7 @@
       var f = it.file, rec = it.rec;
       var pct = Math.round((doneCount / Math.max(1, roundFiles)) * 100);
       if (ocrWorkerState !== "ready") {
-        setProgress(pct, '<span class="pct">' + pct + '%</span> Getting the photo reader ready — this takes a while the first time. Photo ' + (i+1) + " of " + photoList.length + ": " + esc(f.name));
+        setProgress(pct, '<span class="pct">' + pct + '%</span> Getting the photo reader ready — the first time this takes up to 2 minutes. Photo ' + (i+1) + " of " + photoList.length + ": " + esc(f.name));
       } else {
         setProgress(pct, '<span class="pct">' + pct + '%</span> Photo ' + (i+1) + " of " + photoList.length + " — reading the photo with OCR (first 10 pages, stops early when it is found). This one takes a little longer: " + esc(f.name) + " — about " + fmtDur(timeLeft(doneCount)) + " left.");
       }
