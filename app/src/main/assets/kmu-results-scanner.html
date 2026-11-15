@@ -404,6 +404,7 @@
   .rpick.on{background:linear-gradient(135deg, var(--acc-bright), var(--acc-deep)); color:#fff; border-color:transparent;}
   .region-pick-note{font-size:13px; color:var(--ink2);}
   .est-note{font-size:13px; color:var(--ink2); margin-top:8px;}
+  .resumebox{font-size:13px; color:var(--ink2); margin-top:8px;}
   .tabs{display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 4px;}
   .tab{
     border:1px solid var(--card-brd); background:var(--bg); color:var(--ink);
@@ -616,6 +617,7 @@
       </div>
       <div class="region-pick-note">Pick Mardan and only Mardan results are read — the rest are listed separately, not read. Pick All regions to read everything.</div>
       <div class="est-note">Estimated time: about 6 seconds per file — a folder of 100 files takes about 10 minutes. A text PDF is faster, a photo PDF takes longer. The live time left is shown while it scans. The screen stays on while it scans, and the scan keeps going in the background.</div>
+      <div class="resumebox" id="resumeBox" style="display:none"><span id="resumeText"></span> <button type="button" class="btn-ghost btn-small" id="clearSavedBtn">Clear saved results</button></div>
     </div>
   </section>
 
@@ -626,6 +628,7 @@
     </div>
     <div class="up-text" id="uploadText">Receiving your files…</div>
     <button type="button" class="btn-ghost btn-small" id="skipFileBtn" style="display:none">Skip this file</button>
+    <button type="button" class="btn-ghost btn-small" id="pauseBtn" style="display:none">Pause</button>
   </div>
 
   <div class="progress-wrap" id="progressWrap" aria-live="polite">
@@ -1220,9 +1223,31 @@
     items = []; otherCount = 0; seenKeys = {}; skippedOther = []; activeRegionTab = "All";
     filterText = ""; document.getElementById("searchInput").value = "";
     uploadBox.classList.remove("on", "done");
+    // FIX 2026-11-16a: "Start again" also stops a running (or paused) scan.
+    scanGen++; scanning = false; paused = false; stopScanKeepAlive();
+    var pb = document.getElementById("pauseBtn"); if (pb) pb.style.display = "none";
+    var sb = document.getElementById("skipFileBtn"); if (sb) sb.style.display = "none";
     render(); copyMsg.textContent = "";
     window.scrollTo({top:0, behavior:"smooth"});
   });
+  // FIX 2026-11-16a: pause / resume, and clear the saved scan.
+  document.getElementById("pauseBtn").addEventListener("click", function(){
+    if (!scanning) return;
+    if (paused) {
+      paused = false;
+      var b = document.getElementById("pauseBtn");
+      if (b) b.textContent = "Pause";
+      if (resumeScan) resumeScan();
+    } else {
+      paused = true;
+      var b2 = document.getElementById("pauseBtn");
+      if (b2) b2.textContent = "Resume";
+    }
+  });
+  document.getElementById("clearSavedBtn").addEventListener("click", function(){
+    dbClear().then(function(){ refreshResumeBox(); }).catch(function(){});
+  });
+  refreshResumeBox();
   // FIX 2026-11-15g: skip the file that is being read right now — the
   // scan moves to the next file instead of waiting on a stuck one.
   document.getElementById("skipFileBtn").addEventListener("click", function(){
@@ -1755,6 +1780,7 @@
       folder: folderNameOf(path),
       path: path,
       size: sizeText(file.size),
+      sizeBytes: file.size,
       pages: pages,
       readOk: !!(pdfText && pdfText.trim().length > 40),
       ocrOk: false,
@@ -1809,6 +1835,18 @@
     // REVISED reissue is a different subset, not a copy either.
     return (it.region + "|" + it.semester + "|" + it.session + "|" + it.examType + "|" + (it.part || "whole") + "|" + (it.revised ? "revised" : "original")).toLowerCase();
   }
+  // FIX 2026-11-16a: name key for the "looks like a copy" check — copy
+  // markers ((1), copy, signed, backup, duplicate) are removed, so
+  // "Result (1).pdf" and "Result copy.pdf" match "Result.pdf". "Revised"
+  // is NEVER stripped: a REVISED file is a different subset, not a copy.
+  function copyNameKey(name){
+    return String(name || "").toLowerCase()
+      .replace(/\.pdf$/i, "")
+      .replace(/\(\d+\)/g, " ")
+      .replace(/\b(copy|signed|backup|duplicate)\b/g, " ")
+      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/\s+/g, " ").trim();
+  }
   function recomputeDupes(){
     var byContent = {}, byHash = {};
     items.forEach(function(it){
@@ -1830,6 +1868,23 @@
         it.dupe = "Same result as “" + o.fileName + "” — same Region (" + o.region + "), Semester (" + semLabel(o.semester) + "), Session (" + o.session + ") and Type (" + o.examType + "), but a different file name. Its location: " + o.path;
       } else {
         byContent[key] = it;
+      }
+    });
+    // FIX 2026-11-16a: "looks like a copy" — same size and almost the same
+    // name (only a copy marker like (1) or copy is different).
+    var bySize = {};
+    items.forEach(function(it){
+      if (it.dupe) return;
+      var sz = (it.sizeBytes != null ? it.sizeBytes : (it.fileKey ? it.fileKey.split("|")[1] : ""));
+      var k = sz + "|" + copyNameKey(it.fileName);
+      if (bySize[k]) {
+        var o = bySize[k];
+        if (o.fileName !== it.fileName) {
+          it.dupeKind = "Looks like a copy";
+          it.dupe = "Looks like a copy of “" + o.fileName + "” — same size and almost the same name (only a copy marker like (1) or copy is different). Its location: " + o.path;
+        }
+      } else {
+        bySize[k] = it;
       }
     });
   }
@@ -1917,9 +1972,9 @@
     }).then(function(pdf){
       var total = pdf.numPages || rec.pages || 1;
       var last = Math.min(10, total);
-      function renderPage(n){
+      function renderPage(n, rot){
         return pdf.getPage(n).then(function(page){
-          var vp = page.getViewport({ scale: 2 });
+          var vp = page.getViewport({ scale: 2, rotation: rot || 0 });
           var canvas = document.createElement("canvas");
           canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
           var ctx = canvas.getContext("2d");
@@ -1945,9 +2000,34 @@
         return !!(findSemester(text) && findRegion(text) && findSession(text) && findDates(text).length);
       }
       var all = "";
+      // FIX 2026-11-16a: some phone photos (CamScanner) are sideways —
+      // OCR reads nothing useful from them. Page 1 is tried as it is, then
+      // rotated 90 and 270, until the text is useful. Only page 1 is
+      // retried, and only when the first try found almost nothing.
+      function readFirstPage(){
+        var rots = [0, 90, 270];
+        function attempt(k){
+          if (skipCurrentFile) return Promise.resolve();
+          if (k >= rots.length) return Promise.resolve();
+          return renderPage(1, rots[k]).then(function(c){
+            return ocrCanvasText(c).then(function(t){
+              all += " \n " + (t || "");
+              if (enough(all) || (t && t.trim().length > 60)) return;
+              return attempt(k + 1);
+            });
+          }).catch(function(){ return attempt(k + 1); });
+        }
+        return attempt(0);
+      }
       function readPage(n){
         if (skipCurrentFile) return Promise.resolve(all);
         if (n > last) return Promise.resolve(all);
+        if (n === 1) {
+          return readFirstPage().then(function(){
+            if (enough(all)) return all;
+            return readPage(2);
+          });
+        }
         return renderPage(n).then(function(c){
           return ocrCanvasText(c).then(function(t){
             all += " \n " + (t || "");
@@ -1965,6 +2045,7 @@
 
   // ---------- scanning ----------
   var scanning = false;
+  var paused = false, resumePhase = 1, resumeIndex = 0, resumeScan = null, scanGen = 0;
   var skipCurrentFile = false;
   var wakeLock = null;
   // FIX 2026-11-15g: keep the screen on and the scan alive in the
@@ -2012,6 +2093,78 @@
     var h = Math.floor(m / 60);
     return h + " hour" + (h === 1 ? "" : "s") + " " + (m % 60) + " minutes";
   }
+  // FIX 2026-11-16a: save every finished file on the phone (IndexedDB),
+  // so a scan that is killed or closed can continue from where it stopped.
+  // If the phone has no IndexedDB, everything below fails softly and the
+  // scan works exactly as before — just without saving.
+  var idbP = null;
+  function idb(){
+    if (idbP) return idbP;
+    idbP = new Promise(function(resolve, reject){
+      try {
+        if (!window.indexedDB) { reject(new Error("no indexedDB")); return; }
+        var req = window.indexedDB.open("kmu-scanner", 1);
+        req.onupgradeneeded = function(){
+          var db = req.result;
+          if (!db.objectStoreNames.contains("files")) db.createObjectStore("files", { keyPath: "fileKey" });
+        };
+        req.onsuccess = function(){ resolve(req.result); };
+        req.onerror = function(){ reject(req.error || new Error("idb open failed")); };
+      } catch(e){ reject(e); }
+    });
+    return idbP;
+  }
+  function dbPut(rec){
+    return idb().then(function(db){
+      return new Promise(function(resolve, reject){
+        var tx = db.transaction("files", "readwrite");
+        var rq = tx.objectStore("files").put(rec);
+        rq.onsuccess = function(){ resolve(true); };
+        rq.onerror = function(){ reject(rq.error || new Error("idb put failed")); };
+      });
+    });
+  }
+  function dbGetAll(){
+    return idb().then(function(db){
+      return new Promise(function(resolve, reject){
+        var rq = db.transaction("files", "readonly").objectStore("files").getAll();
+        rq.onsuccess = function(){ resolve(rq.result || []); };
+        rq.onerror = function(){ reject(rq.error || new Error("idb get failed")); };
+      });
+    });
+  }
+  function dbClear(){
+    return idb().then(function(db){
+      return new Promise(function(resolve, reject){
+        var rq = db.transaction("files", "readwrite").objectStore("files").clear();
+        rq.onsuccess = function(){ resolve(true); };
+        rq.onerror = function(){ reject(rq.error || new Error("idb clear failed")); };
+      });
+    });
+  }
+  function saveRecord(rec){
+    // Fire and forget — a slow phone must never wait on the save.
+    try { rec.savedAt = Date.now(); dbPut(rec).catch(function(){}); } catch(e){}
+  }
+  function loadSavedRecords(){
+    return dbGetAll().then(function(list){
+      var map = {};
+      list.forEach(function(r){ if (r && r.fileKey) map[r.fileKey] = r; });
+      return map;
+    }).catch(function(){ return {}; });
+  }
+  function refreshResumeBox(){
+    dbGetAll().then(function(list){
+      var box = document.getElementById("resumeBox");
+      if (!box) return;
+      if (!list.length) { box.style.display = "none"; return; }
+      var latest = 0;
+      list.forEach(function(r){ if (r.savedAt && r.savedAt > latest) latest = r.savedAt; });
+      document.getElementById("resumeText").textContent = "Saved on this phone: " + list.length + " result(s)" + (latest ? " — last saved " + new Date(latest).toLocaleDateString() : "") + ". Pick the same folder to continue — files already saved are not read again.";
+      box.style.display = "block";
+    }).catch(function(){});
+  }
+
   function handleFiles(fileList){
     if (scanning || !fileList || !fileList.length) return;
     var all = Array.prototype.slice.call(fileList);
@@ -2055,6 +2208,9 @@
     }
     scanning = true;
     startScanKeepAlive();
+    scanGen++;
+    var myGen = scanGen;
+    paused = false; resumePhase = 1; resumeIndex = 0; resumeScan = null;
     document.body.classList.add("scanning");
     progressWrap.classList.add("on");
     // FIX 2026-11-15b: estimated time. About 6 seconds a file on average
@@ -2062,78 +2218,161 @@
     // updated live from the real speed, so the user knows how long it takes.
     var scanStart = Date.now();
     var estTotalMs = pdfs.length * 6000;
+    var roundFiles = pdfs.length; // files in this round (saved + to read)
     function timeLeft(done){
       var el = Date.now() - scanStart;
       var avg = done > 0 ? el / done : 6000;
-      return Math.round(avg * (pdfs.length - done));
+      return Math.round(avg * (roundFiles - done));
     }
     // Show the upload the moment the files are picked — before any reading
     // starts — so it never looks like nothing is happening.
     uploadBox.classList.add("on"); uploadBox.classList.remove("done");
-    uploadText.innerHTML = "Uploading — <b>" + all.length + "</b> file(s) received. Reading starts now, one file at a time. Estimated time: <b>about " + fmtDur(estTotalMs) + "</b> for " + pdfs.length + " PDF(s). Please keep this page open. Screen stays on while it scans.";
+    var pb0 = document.getElementById("pauseBtn");
+    if (pb0) { pb0.style.display = "inline-block"; pb0.textContent = "Pause"; }
+    uploadText.innerHTML = "Uploading — <b>" + all.length + "</b> file(s) received. Reading starts now — text results first, then the photo PDFs. Estimated time: <b>about " + fmtDur(estTotalMs) + "</b> for " + pdfs.length + " PDF(s). Please keep this page open. Screen stays on while it scans.";
     setProgress(0, '<span class="pct">0%</span> Files received — starting to read… Estimated time: about ' + fmtDur(estTotalMs) + '.');
-    function afterRead(rec, i){
+    // FIX 2026-11-16a: two-stage scan + pause + save-as-you-go.
+    // Stage 1 reads the TEXT inside every PDF first (about 1 second each)
+    // — so most results appear in the first minute. Stage 2 then reads the
+    // photo PDFs with OCR, which is the slow part. Every finished file is
+    // saved on the phone at once, so if the app closes or the phone dies,
+    // picking the same folder again continues from where it stopped —
+    // saved files are not read again. The Pause button stops between
+    // files; Resume carries on from the same place.
+    var photoList = [];   // {file, rec} — photo PDFs waiting for OCR
+    var toRead = pdfs;    // files still to read (saved ones are taken out)
+    var doneCount = 0;    // files finished (either stage), for progress
+    var newInRound = pdfs.length;
+    var savedCount = 0;
+    function showFileProgress(label){
+      var pct = Math.round((doneCount / Math.max(1, roundFiles)) * 100);
+      setProgress(pct, '<span class="pct">' + pct + '%</span> ' + label + " — about " + fmtDur(timeLeft(doneCount)) + " left.");
+      uploadText.innerHTML = "Files received: <b>" + all.length + "</b> — " + label + "… About " + fmtDur(timeLeft(doneCount)) + " left.";
+    }
+    function afterRead(rec){
       // FIX 2026-11-15e: a file whose region (from inside the PDF or the
       // photo) is another region goes to the skipped list, not the main list.
       if (scanRegion && rec.region && rec.region.indexOf("CHECK") < 0 && rec.region !== scanRegion) {
         skippedOther.push({ fileName: rec.fileName, path: rec.path, region: rec.region });
       } else {
         items.push(rec);
+        saveRecord(rec); // FIX 2026-11-16a: saved at once, so a killed scan loses nothing
       }
-      step(i + 1);
+      doneCount++;
     }
-    function step(i){
-      if (i >= pdfs.length) {
-        scanning = false;
-        stopScanKeepAlive();
-        var sk0 = document.getElementById("skipFileBtn");
-        if (sk0) sk0.style.display = "none";
-        document.body.classList.remove("scanning");
-        var dc = dupItems().length;
-        var ocrN = items.filter(function(x){ return x.ocrOk; }).length;
-        var photoLeft = items.filter(function(x){ return !x.readOk && !x.ocrOk; }).length;
-        setProgress(100, '<span class="pct">100%</span> All done — every file has been read. Finished in ' + fmtDur(Date.now() - scanStart) + '. '
-          + pdfs.length + " new file(s) in this round."
-          + (ocrN ? " " + ocrN + " photo PDF(s) were read with OCR." : "")
-          + (photoLeft && !ocrAvailable() ? " " + photoLeft + " photo PDF(s) could not be read this time: the OCR reader needs an internet connection once to load. Connect once, scan again, and those will be read from the photo itself." : "")
-          + (cloned ? " " + cloned + " same-file copy(ies) flagged." : "")
-          + (others ? " " + others + " other file(s) counted." : "")
-          + (dc ? " " + dc + " possible duplicate(s) found — see the red box below." : " No duplicates found.")
-          + (skippedOther.length ? " " + skippedOther.length + " file(s) from other regions were skipped for this scan — see their list below." : ""));
-        uploadBox.classList.add("done");
-        uploadText.innerHTML = "Upload finished — all <b>" + all.length + "</b> file(s) received and read in " + fmtDur(Date.now() - scanStart) + ". The results are below, in simple words.";
-        render();
-        document.getElementById("summary").scrollIntoView({behavior: reducedMotion ? "auto" : "smooth", block:"start"});
-        return;
-      }
-      var f = pdfs[i];
-      var pct = Math.round((i / pdfs.length) * 100);
-      setProgress(pct, '<span class="pct">' + pct + '%</span> Reading file ' + (i+1) + " of " + pdfs.length + ", first 10 pages: " + esc(f.name) + " — about " + fmtDur(timeLeft(i)) + " left.");
-      uploadText.innerHTML = "Files received: <b>" + all.length + "</b> — now reading file " + (i+1) + " of " + pdfs.length + "… About " + fmtDur(timeLeft(i)) + " left.";
+    function showPaused(){
+      var pb = document.getElementById("pauseBtn");
+      if (pb) { pb.style.display = "inline-block"; pb.textContent = "Resume"; }
+      var pct = Math.round((doneCount / Math.max(1, roundFiles)) * 100);
+      setProgress(pct, '<span class="pct">' + pct + '%</span> Paused — ' + doneCount + " of " + roundFiles + " files read. Tap Resume to carry on.");
+      uploadText.innerHTML = "Paused — <b>" + doneCount + "</b> of " + roundFiles + " files read. Your results so far are saved. Tap Resume to carry on.";
+    }
+    function phase1(i){
+      if (myGen !== scanGen) return;
+      if (i >= toRead.length) { startPhase2(); return; }
+      if (paused) { resumePhase = 1; resumeIndex = i; showPaused(); return; }
+      var f = toRead[i];
+      showFileProgress("Reading text " + (doneCount + 1) + " of " + roundFiles + ": " + esc(f.name));
       extractPdfText(f).then(function(ex){
+        if (myGen !== scanGen) return;
         var rec = buildRecord(f, ex);
         if (!rec.readOk && ocrAvailable()) {
-          // FIX 2026-11-15g: if the photo reader itself is still
-          // downloading (slow internet), say so — and never hang on one
-          // file: 5 minutes at most, then move on to the next file.
-          if (ocrWorkerState !== "ready") {
-            setProgress(pct, '<span class="pct">' + pct + '%</span> Getting the photo reader ready — it downloads once from the internet. If your internet is slow, this takes a while. File ' + (i+1) + " of " + pdfs.length + ": " + esc(f.name));
-          } else {
-            setProgress(pct, '<span class="pct">' + pct + '%</span> File ' + (i+1) + " of " + pdfs.length + " is a photo PDF — reading the photo with OCR (first 10 pages, stops early when it is found). This one takes a little longer: " + esc(f.name) + " — about " + fmtDur(timeLeft(i)) + " left.");
-          }
-          skipCurrentFile = false;
-          var skBtn = document.getElementById("skipFileBtn");
-          if (skBtn) { skBtn.style.display = "inline-block"; skBtn.textContent = "Skip this file"; }
-          return withTimeout(ocrRecord(f, rec), 300000).then(function(){
-            if (skBtn) skBtn.style.display = "none";
-            afterRead(rec, i);
-          });
+          photoList.push({ file: f, rec: rec });
+        } else {
+          afterRead(rec);
         }
-        afterRead(rec, i);
+        phase1(i + 1);
+      }).catch(function(){
+        if (myGen !== scanGen) return;
+        var rec2 = buildRecord(f, null);
+        if (!rec2.readOk && ocrAvailable()) photoList.push({ file: f, rec: rec2 });
+        else afterRead(rec2);
+        phase1(i + 1);
       });
     }
-    // Let the phone draw the upload animation first, then start reading.
-    requestAnimationFrame(function(){ requestAnimationFrame(function(){ setTimeout(function(){ step(0); }, 40); }); });
+    function startPhase2(){
+      render(); // show the text results now, before the slow photo part
+      if (!photoList.length) { finishScan(); return; }
+      var pct = Math.round((doneCount / Math.max(1, roundFiles)) * 100);
+      setProgress(pct, '<span class="pct">' + pct + '%</span> Text done — now reading ' + photoList.length + " photo PDF(s) with OCR. This is the slow part.");
+      phase2(0);
+    }
+    function phase2(i){
+      if (myGen !== scanGen) return;
+      if (i >= photoList.length) { finishScan(); return; }
+      if (paused) { resumePhase = 2; resumeIndex = i; showPaused(); return; }
+      var it = photoList[i];
+      var f = it.file, rec = it.rec;
+      var pct = Math.round((doneCount / Math.max(1, roundFiles)) * 100);
+      if (ocrWorkerState !== "ready") {
+        setProgress(pct, '<span class="pct">' + pct + '%</span> Getting the photo reader ready — it downloads once from the internet. If your internet is slow, this takes a while. Photo ' + (i+1) + " of " + photoList.length + ": " + esc(f.name));
+      } else {
+        setProgress(pct, '<span class="pct">' + pct + '%</span> Photo ' + (i+1) + " of " + photoList.length + " — reading the photo with OCR (first 10 pages, stops early when it is found). This one takes a little longer: " + esc(f.name) + " — about " + fmtDur(timeLeft(doneCount)) + " left.");
+      }
+      uploadText.innerHTML = "Files received: <b>" + all.length + "</b> — now reading photo " + (i+1) + " of " + photoList.length + "… About " + fmtDur(timeLeft(doneCount)) + " left.";
+      skipCurrentFile = false;
+      var skBtn = document.getElementById("skipFileBtn");
+      if (skBtn) { skBtn.style.display = "inline-block"; skBtn.textContent = "Skip this file"; }
+      withTimeout(ocrRecord(f, rec), 300000).then(function(){
+        if (myGen !== scanGen) return;
+        if (skBtn) skBtn.style.display = "none";
+        afterRead(rec);
+        phase2(i + 1);
+      });
+    }
+    function finishScan(){
+      if (myGen !== scanGen) return;
+      scanning = false;
+      stopScanKeepAlive();
+      var sk0 = document.getElementById("skipFileBtn");
+      if (sk0) sk0.style.display = "none";
+      var pb0 = document.getElementById("pauseBtn");
+      if (pb0) pb0.style.display = "none";
+      document.body.classList.remove("scanning");
+      var dc = dupItems().length;
+      var ocrN = items.filter(function(x){ return x.ocrOk; }).length;
+      var photoLeft = items.filter(function(x){ return !x.readOk && !x.ocrOk; }).length;
+      setProgress(100, '<span class="pct">100%</span> All done — every file has been read. Finished in ' + fmtDur(Date.now() - scanStart) + '. '
+        + newInRound + " new file(s) in this round."
+        + (savedCount ? " " + savedCount + " file(s) were already saved from before." : "")
+        + (ocrN ? " " + ocrN + " photo PDF(s) were read with OCR." : "")
+        + (photoLeft && !ocrAvailable() ? " " + photoLeft + " photo PDF(s) could not be read this time: the OCR reader needs an internet connection once to load. Connect once, scan again, and those will be read from the photo itself." : "")
+        + (cloned ? " " + cloned + " same-file copy(ies) flagged." : "")
+        + (others ? " " + others + " other file(s) counted." : "")
+        + (dc ? " " + dc + " possible duplicate(s) found — see the red box below." : " No duplicates found.")
+        + (skippedOther.length ? " " + skippedOther.length + " file(s) from other regions were skipped for this scan — see their list below." : ""));
+      uploadBox.classList.add("done");
+      uploadText.innerHTML = "Upload finished — all <b>" + all.length + "</b> file(s) received and read in " + fmtDur(Date.now() - scanStart) + ". The results are below, in simple words.";
+      render();
+      refreshResumeBox();
+      document.getElementById("summary").scrollIntoView({behavior: reducedMotion ? "auto" : "smooth", block:"start"});
+    }
+    resumeScan = function(){
+      if (myGen !== scanGen) return;
+      if (resumePhase === 1) phase1(resumeIndex); else phase2(resumeIndex);
+    };
+    // Load files already saved from an earlier scan, then start.
+    // Saved files are not read again — they go straight into the list.
+    loadSavedRecords().then(function(savedMap){
+      if (myGen !== scanGen) return;
+      var rest = [];
+      pdfs.forEach(function(f){
+        var key = f.name.toLowerCase() + "|" + f.size;
+        var sv = savedMap[key];
+        if (sv) { savedCount++; afterRead(sv); }
+        else { rest.push(f); }
+      });
+      toRead = rest;
+      newInRound = rest.length;
+      if (savedCount) {
+        var pct = Math.round((doneCount / Math.max(1, roundFiles)) * 100);
+        setProgress(pct, '<span class="pct">' + pct + '%</span> ' + savedCount + " file(s) already saved from before — not read again. Reading the rest now.");
+        render();
+      }
+      if (!rest.length) { finishScan(); return; }
+      // Let the phone draw the upload animation first, then start reading.
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){ setTimeout(function(){ phase1(0); }, 40); }); });
+    });
   }
 
   // ---------- sorting & rendering ----------
