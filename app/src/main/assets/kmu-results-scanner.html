@@ -615,7 +615,7 @@
         <button type="button" class="rpick" data-region="All Region">All Region</button>
       </div>
       <div class="region-pick-note">Pick Mardan and only Mardan results are read — the rest are listed separately, not read. Pick All regions to read everything.</div>
-      <div class="est-note">Estimated time: about 6 seconds per file — a folder of 100 files takes about 10 minutes. A text PDF is faster, a photo PDF takes longer. The live time left is shown while it scans.</div>
+      <div class="est-note">Estimated time: about 6 seconds per file — a folder of 100 files takes about 10 minutes. A text PDF is faster, a photo PDF takes longer. The live time left is shown while it scans. The screen stays on while it scans, and the scan keeps going in the background.</div>
     </div>
   </section>
 
@@ -625,6 +625,7 @@
       <span class="up-dot d1"></span><span class="up-dot d2"></span><span class="up-dot d3"></span>
     </div>
     <div class="up-text" id="uploadText">Receiving your files…</div>
+    <button type="button" class="btn-ghost btn-small" id="skipFileBtn" style="display:none">Skip this file</button>
   </div>
 
   <div class="progress-wrap" id="progressWrap" aria-live="polite">
@@ -1221,6 +1222,13 @@
     uploadBox.classList.remove("on", "done");
     render(); copyMsg.textContent = "";
     window.scrollTo({top:0, behavior:"smooth"});
+  });
+  // FIX 2026-11-15g: skip the file that is being read right now — the
+  // scan moves to the next file instead of waiting on a stuck one.
+  document.getElementById("skipFileBtn").addEventListener("click", function(){
+    skipCurrentFile = true;
+    var b = document.getElementById("skipFileBtn");
+    if (b) b.textContent = "Skipping…";
   });
 
   folderInput.addEventListener("change", function(){ handleFiles(folderInput.files); folderInput.value=""; });
@@ -1843,25 +1851,36 @@
   // region in the signatures at all. Both libraries load from the internet
   // once; if they cannot load, the file falls back to its file name and the
   // report says so plainly.
-  var ocrWorkerP = null, ocrFailed = false;
+  function withTimeout(p, ms){
+    return Promise.race([p, new Promise(function(res){ setTimeout(function(){ res(null); }, ms); })]);
+  }
+  // FIX 2026-11-15g: the photo reader (Tesseract) downloads its engine
+  // from the internet once. On a slow connection that download can hang
+  // forever — and the scan sat at file 1, 0%, with no sign of it. Now the
+  // download gets 90 seconds: if it cannot load in that time, the file is
+  // read from its name only and the scan moves on (the finish message says
+  // the reader needs internet once). ocrWorkerState tells the progress
+  // line what is happening, so a slow download is visible, not a stuck 0%.
+  var ocrWorkerP = null, ocrFailed = false, ocrWorkerState = "idle"; // idle | loading | ready | failed
   function ocrAvailable(){ return !!(window.Tesseract && window.pdfjsLib) && !ocrFailed; }
   function getOcrWorker(){
     if (!window.Tesseract) return Promise.resolve(null);
     if (!ocrWorkerP) {
-      ocrWorkerP = window.Tesseract.createWorker("eng")
-        .then(function(w){ return w; })
-        .catch(function(){ ocrFailed = true; return null; });
+      ocrWorkerState = "loading";
+      ocrWorkerP = withTimeout(window.Tesseract.createWorker("eng"), 90000)
+        .then(function(w){
+          if (!w) { ocrFailed = true; ocrWorkerState = "failed"; return null; }
+          ocrWorkerState = "ready"; return w;
+        })
+        .catch(function(){ ocrFailed = true; ocrWorkerState = "failed"; return null; });
     }
     return ocrWorkerP;
-  }
-  function withTimeout(p, ms){
-    return Promise.race([p, new Promise(function(res){ setTimeout(function(){ res(null); }, ms); })]);
   }
   function ocrCanvasText(canvas){
     if (!canvas) return Promise.resolve("");
     return getOcrWorker().then(function(w){
       if (!w) return "";
-      return withTimeout(w.recognize(canvas), 120000)
+      return withTimeout(w.recognize(canvas), 60000)
         .then(function(r){ return (r && r.data && r.data.text) || ""; })
         .catch(function(){ return ""; });
     });
@@ -1927,6 +1946,7 @@
       }
       var all = "";
       function readPage(n){
+        if (skipCurrentFile) return Promise.resolve(all);
         if (n > last) return Promise.resolve(all);
         return renderPage(n).then(function(c){
           return ocrCanvasText(c).then(function(t){
@@ -1945,6 +1965,31 @@
 
   // ---------- scanning ----------
   var scanning = false;
+  var skipCurrentFile = false;
+  var wakeLock = null;
+  // FIX 2026-11-15g: keep the screen on and the scan alive in the
+  // background. The screen lock is the Wake Lock API (works in the app's
+  // WebView); the background part is the native ScanBridge service in the
+  // app — the page asks it to start when a scan starts and to stop when
+  // it finishes. If the app is old and has no ScanBridge, nothing breaks.
+  function requestWakeLock(){
+    if (!("wakeLock" in navigator)) return;
+    try { navigator.wakeLock.request("screen").then(function(l){ wakeLock = l; }).catch(function(){}); } catch(e){}
+  }
+  function releaseWakeLock(){
+    try { if (wakeLock) { wakeLock.release(); wakeLock = null; } } catch(e){}
+  }
+  function startScanKeepAlive(){
+    requestWakeLock();
+    try { if (window.ScanBridge) window.ScanBridge.startScan(); } catch(e){}
+  }
+  function stopScanKeepAlive(){
+    releaseWakeLock();
+    try { if (window.ScanBridge) window.ScanBridge.stopScan(); } catch(e){}
+  }
+  document.addEventListener("visibilitychange", function(){
+    if (document.visibilityState === "visible" && scanning) requestWakeLock();
+  });
   function findByKey(key){
     for (var i=0;i<items.length;i++) if (items[i].fileKey === key) return items[i];
     return null;
@@ -1961,11 +2006,11 @@
   function fmtDur(ms){
     if (!ms || ms < 0) ms = 0;
     var s = Math.round(ms / 1000);
-    if (s < 60) return "about " + Math.max(1, s) + " second" + (s === 1 ? "" : "s");
+    if (s < 60) { var v = Math.max(1, s); return v + " second" + (v === 1 ? "" : "s"); }
     var m = Math.round(s / 60);
-    if (m < 60) return "about " + m + " minute" + (m === 1 ? "" : "s");
+    if (m < 60) return m + " minute" + (m === 1 ? "" : "s");
     var h = Math.floor(m / 60);
-    return "about " + h + " hour" + (h === 1 ? "" : "s") + " " + (m % 60) + " minutes";
+    return h + " hour" + (h === 1 ? "" : "s") + " " + (m % 60) + " minutes";
   }
   function handleFiles(fileList){
     if (scanning || !fileList || !fileList.length) return;
@@ -2009,6 +2054,7 @@
       return;
     }
     scanning = true;
+    startScanKeepAlive();
     document.body.classList.add("scanning");
     progressWrap.classList.add("on");
     // FIX 2026-11-15b: estimated time. About 6 seconds a file on average
@@ -2024,8 +2070,8 @@
     // Show the upload the moment the files are picked — before any reading
     // starts — so it never looks like nothing is happening.
     uploadBox.classList.add("on"); uploadBox.classList.remove("done");
-    uploadText.innerHTML = "Uploading — <b>" + all.length + "</b> file(s) received. Reading starts now, one file at a time. Estimated time: <b>" + fmtDur(estTotalMs) + "</b> for " + pdfs.length + " PDF(s). Please keep this page open.";
-    setProgress(0, '<span class="pct">0%</span> Files received — starting to read… Estimated time: ' + fmtDur(estTotalMs) + '.');
+    uploadText.innerHTML = "Uploading — <b>" + all.length + "</b> file(s) received. Reading starts now, one file at a time. Estimated time: <b>about " + fmtDur(estTotalMs) + "</b> for " + pdfs.length + " PDF(s). Please keep this page open. Screen stays on while it scans.";
+    setProgress(0, '<span class="pct">0%</span> Files received — starting to read… Estimated time: about ' + fmtDur(estTotalMs) + '.');
     function afterRead(rec, i){
       // FIX 2026-11-15e: a file whose region (from inside the PDF or the
       // photo) is another region goes to the skipped list, not the main list.
@@ -2039,6 +2085,9 @@
     function step(i){
       if (i >= pdfs.length) {
         scanning = false;
+        stopScanKeepAlive();
+        var sk0 = document.getElementById("skipFileBtn");
+        if (sk0) sk0.style.display = "none";
         document.body.classList.remove("scanning");
         var dc = dupItems().length;
         var ocrN = items.filter(function(x){ return x.ocrOk; }).length;
@@ -2064,8 +2113,21 @@
       extractPdfText(f).then(function(ex){
         var rec = buildRecord(f, ex);
         if (!rec.readOk && ocrAvailable()) {
-          setProgress(pct, '<span class="pct">' + pct + '%</span> File ' + (i+1) + " of " + pdfs.length + " is a photo PDF — reading the photo with OCR (first 10 pages, stops early when it is found). This one takes a little longer: " + esc(f.name) + " — about " + fmtDur(timeLeft(i)) + " left.");
-          return ocrRecord(f, rec).then(function(){ afterRead(rec, i); });
+          // FIX 2026-11-15g: if the photo reader itself is still
+          // downloading (slow internet), say so — and never hang on one
+          // file: 5 minutes at most, then move on to the next file.
+          if (ocrWorkerState !== "ready") {
+            setProgress(pct, '<span class="pct">' + pct + '%</span> Getting the photo reader ready — it downloads once from the internet. If your internet is slow, this takes a while. File ' + (i+1) + " of " + pdfs.length + ": " + esc(f.name));
+          } else {
+            setProgress(pct, '<span class="pct">' + pct + '%</span> File ' + (i+1) + " of " + pdfs.length + " is a photo PDF — reading the photo with OCR (first 10 pages, stops early when it is found). This one takes a little longer: " + esc(f.name) + " — about " + fmtDur(timeLeft(i)) + " left.");
+          }
+          skipCurrentFile = false;
+          var skBtn = document.getElementById("skipFileBtn");
+          if (skBtn) { skBtn.style.display = "inline-block"; skBtn.textContent = "Skip this file"; }
+          return withTimeout(ocrRecord(f, rec), 300000).then(function(){
+            if (skBtn) skBtn.style.display = "none";
+            afterRead(rec, i);
+          });
         }
         afterRead(rec, i);
       });
